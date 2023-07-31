@@ -1,0 +1,33 @@
+# Ignore Python Bytecode
+__pycache__/
+*.pyc
+
+# Ignore Python virtual environment
+venv/
+
+# Ignore IDE and editor-specific files (customize this based on your editor or IDE)
+.idea/
+
+# Ignore environment-specific files
+.env
+
+# Ignore any local configuration files
+config.local.ini
+
+# Ignore log files
+*.log
+
+# Ignore compiled Python files
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore database files
+*.db
+
+# Ignore cache directories
+__pycache__/
+.cache/
+
+# Ignore any sensitive or private information (e.g., API keys, passwords)
+secrets.txt
