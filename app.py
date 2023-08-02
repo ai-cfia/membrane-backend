@@ -8,7 +8,7 @@ from flask_session import Session
 from utils import is_valid_email, create_jwt
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'SECRET'
+app.config['SECRET_KEY'] = 'SECRET' # TODO: Define a secret key for the app using environment variables
 app.config['SESSION_TYPE'] = 'filesystem'  # Use file-based session storage (you can explore other storage options)
 Session(app)
 
@@ -80,7 +80,7 @@ def verify_token(token):
         session['authenticated'] = True
         session['user_email'] = email
 
-        # Redirect the user to a dashboard or a welcome page
+        # TODO: Redirect the user back to Louis Login page
         return make_response('Email Verified', 200)
 
     except jwt.ExpiredSignatureError:
