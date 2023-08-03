@@ -8,6 +8,7 @@ from flask_jwt_extended import JWTManager, create_access_token, decode_token
 from flask import Flask, request, jsonify, session, make_response, redirect, url_for
 from flask_session import Session
 from utils import is_valid_email
+logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = 'super-secret'  # Change this!
@@ -17,6 +18,37 @@ jwt = JWTManager(app)
 # Configure Flask-Session
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
+
+@app.before_request
+def log_request_info():
+    app.logger.debug('Headers: %s', request.headers)
+    app.logger.debug('Body: %s', request.get_data())
+
+@app.route('/check_session', methods=['GET'])
+def check_session():
+    """
+    This endpoint checks if there is a current session for the user. If the user is 
+    not authenticated, the user will be redirected to the login page.
+
+    Parameters:
+    None
+
+    Returns:
+    A JSON response object and an HTTP status code. The response object contains a 'message' key.
+    The possible outcomes are:
+    - Returns a 200 HTTP status code and a message that the user is authenticated if there is a 
+      current session for the user.
+    - TODO: Returns a redirection to the Louis Login Frontend if there is no current session for the 
+      user.
+    """
+    # At the start of your check_session function
+    logging.debug("Received Session Data: %s", session)
+
+    if 'authenticated' in session and session['authenticated']:
+        return jsonify({'message': 'User is authenticated.'}), 200
+    
+    # - TODO: Implement redirection to Louis Login Frontend
+    return jsonify({'message': 'User is not authenticated. Redirecting...'}), 200
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -47,6 +79,9 @@ def login():
     data = request.get_json()
     email = data.get('email')
     redirect_url = data.get('redirect_url')
+
+    # inside your login function after setting session variables
+    logging.debug("Session Data: %s", session)
 
     if email is None or redirect_url is None:
         return jsonify({'error': 'Missing email or redirect URL.'}), 400
