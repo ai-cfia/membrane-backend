@@ -1,91 +1,91 @@
 """
 Login API Test
 """
-# pylint: disable=redefined-outer-name
 import pytest
-import requests
+from flask import Flask
+from flask.testing import FlaskClient
 
-@pytest.fixture(scope='module')
+# Import the Flask application instance from your app module
+from app import app as flask_app
+
+@pytest.fixture
+def app():
+    """Flask application fixture for the tests."""
+    yield flask_app
+    # pylint: disable=redefined-outer-name
+    
+@pytest.fixture
+def test_client(app: Flask):
+    """Test client fixture for the tests."""
+    return app.test_client()
+
+@pytest.fixture
 def base_url():
-    """Fixture to set base url"""
-    return 'http://localhost:5000'
+    """Base URL fixture for the tests."""
+    return '/'
 
-@pytest.fixture(scope='module')
+@pytest.fixture
 def login_url(base_url):
-    """Fixture to set login url"""
-    return f'{base_url}/login'
+    """Login URL fixture for the tests."""
+    return f'{base_url}login'
 
-def test_valid_login(request):
-    """
-    Test case for valid login credentials.
-    Asserts that the status code of the response is 200
-    """
-    login_url = request.getfixturevalue('login_url')
-    response = requests.post(
+def test_valid_login(login_url, test_client: FlaskClient):
+    """Test case for valid login."""
+    response = test_client.post(
         login_url,
         json={
             "email": "valid.email@inspection.gc.ca",
             "redirect_url": "http://localhost:3000/"
-        },
-        timeout=5
+        }
     )
     assert response.status_code == 200
 
-def test_invalid_email_format(request):
-    """
-    Test case for invalid email format.
-    Asserts that the status code of the response is 400
-    """
-    login_url = request.getfixturevalue('login_url')
-    response = requests.post(
+def test_invalid_email_format(login_url, test_client: FlaskClient):
+    """Test case for invalid email format."""
+    response = test_client.post(
         login_url,
         json={
             "email": "invalid.email",
             "redirect_url": "http://localhost:3000/"
-        },
-        timeout=5
+        }
     )
     assert response.status_code == 400
 
-def test_email_not_provided(request):
-    """
-    Test case for not providing an email.
-    Asserts that the status code of the response is 400
-    """
-    login_url = request.getfixturevalue('login_url')
-    response = requests.post(
+def test_email_not_provided(login_url, test_client: FlaskClient):
+    """Test case for not provided email."""
+    response = test_client.post(
         login_url,
         json={
             "redirect_url": "http://localhost:3000/"
-        },
-        timeout=5
+        }
     )
     assert response.status_code == 400
 
-def test_redirect_url_not_provided(request):
-    """
-    Test case for not providing a redirect url.
-    Asserts that the status code of the response is 400
-    """
-    login_url = request.getfixturevalue('login_url')
-    response = requests.post(
+def test_invalid_redirect_url(login_url, test_client: FlaskClient):
+    """Test case for invalid redirect url."""
+    response = test_client.post(
         login_url,
         json={
             "email": "valid.email@example.com",
-        },
-        timeout=5
+            "redirect_url": "htp:/localhost"
+        }
     )
     assert response.status_code == 400
 
-def test_empty_json(request):
-    """
-    Test case for empty json.
-    Asserts that the status code of the response is 400
-    """
-    login_url = request.getfixturevalue('login_url')
-    response = requests.post(
+def test_redirect_url_not_provided(login_url, test_client: FlaskClient):
+    """Test case for not provided redirect url."""
+    response = test_client.post(
         login_url,
-        json={},
-        timeout=5
+        json={
+            "email": "valid.email@example.com",
+        }
     )
-    assert response.status_code == 400 
+    assert response.status_code == 400
+
+def test_empty_json(login_url, test_client: FlaskClient):
+    """Test case for empty json body."""
+    response = test_client.post(
+        login_url,
+        json={}
+    )
+    assert response.status_code == 400
