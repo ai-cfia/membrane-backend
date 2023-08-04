@@ -21,6 +21,12 @@ Session(app)
 
 @app.before_request
 def log_request_info():
+    """
+    This function logs the request info.
+    
+    It is executed before each request in the Flask application due 
+    to the use of the @app.before_request decorator.
+    """
     app.logger.debug('Headers: %s', request.headers)
     app.logger.debug('Body: %s', request.get_data())
 
@@ -64,17 +70,6 @@ def login():
     Returns:
     A JSON response object and an HTTP status code. The response object contains a 'message' or 
     'error' key depending on the result of the request.
-
-    The possible outcomes are:
-    - Returns a 200 HTTP status code and a message that the user is already authenticated if the 
-      user
-      is already authenticated.
-    - Returns a 200 HTTP status code and a message that the email is valid and the JWT link has 
-      been sent if
-      the email is valid and the user is not authenticated.
-    - Returns a 400 HTTP status code and an error message if the email is invalid.
-    - Returns a 400 HTTP status code and an error message if the email or the redirect URL are not 
-      provided.
     """
     data = request.get_json()
     email = data.get('email')
