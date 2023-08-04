@@ -4,3 +4,4 @@ flask-restful
 flask-jwt-extended
 pytest
 requests
+python-dotenv
