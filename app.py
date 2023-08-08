@@ -3,17 +3,22 @@ CFIA Louis Backend Flask Application
 """
 import logging
 from datetime import timedelta
+from pathlib import Path  # Python 3.6+ only
 from jwt.exceptions import InvalidTokenError
+from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager, create_access_token, decode_token
 from flask import Flask, request, jsonify, session, make_response, redirect, url_for
 from flask_session import Session
 from utils import is_valid_email
+
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = 'super-secret'  # Change this!
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=60)  # Set token expiry time
 jwt = JWTManager(app)
+env_path = Path('./') / '.env'
+load_dotenv(dotenv_path=env_path)
 
 # Configure Flask-Session
 app.config['SESSION_TYPE'] = 'filesystem'

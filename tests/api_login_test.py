@@ -2,23 +2,23 @@
 Login API Test
 """
 import os
-from pathlib import Path  # Python 3.6+ only
 import pytest
 from flask import Flask
 from flask.testing import FlaskClient
-from dotenv import load_dotenv
+from flask_session import Session
 
 # Import the Flask application instance from your app module
 from app import app as flask_app
 
-env_path = Path('../') / '.env'
-load_dotenv(dotenv_path=env_path)
-
-print(os.environ)
-
 @pytest.fixture
 def app():
     """Flask application fixture for the tests."""
+    flask_app.config['SESSION_TYPE'] = 'memory'
+    flask_app.config['SESSION_PERMANENT'] = False
+
+    session = Session()
+    session.init_app(flask_app)
+
     yield flask_app
     # pylint: disable=redefined-outer-name
 
@@ -37,9 +37,14 @@ def login_url(base_url):
     """Login URL fixture for the tests."""
     return f'{base_url}login'
 
+@pytest.fixture
+def set_allowed_domains(monkeypatch):  # noqa
+    """Fixture to set the allowed email domains environment variable."""
+    monkeypatch.setenv('ALLOWED_EMAIL_DOMAINS', 'gc.ca,canada.ca,inspection.gc.ca')
+
+@pytest.mark.usefixtures("set_allowed_domains")
 def test_valid_login(login_url, test_client: FlaskClient):
     """Test case for valid login."""
-    os.environ['ALLOWED_EMAIL_DOMAINS'] = os.getenv('ALLOWED_EMAIL_DOMAINS')
     response = test_client.post(
         login_url,
         json={
@@ -47,14 +52,15 @@ def test_valid_login(login_url, test_client: FlaskClient):
             "redirect_url": "http://localhost:3000/"
         }
     )
+    assert response.status_code == 200
 
     allowed_domains = os.getenv('ALLOWED_EMAIL_DOMAINS', '')
     print(allowed_domains)
     assert response.status_code == 200
 
+@pytest.mark.usefixtures("set_allowed_domains")
 def test_invalid_email_format(login_url, test_client: FlaskClient):
     """Test case for invalid email format."""
-    os.environ['ALLOWED_EMAIL_DOMAINS'] = os.getenv('ALLOWED_EMAIL_DOMAINS')
     response = test_client.post(
         login_url,
         json={
@@ -64,9 +70,9 @@ def test_invalid_email_format(login_url, test_client: FlaskClient):
     )
     assert response.status_code == 400
 
+@pytest.mark.usefixtures("set_allowed_domains")
 def test_email_not_provided(login_url, test_client: FlaskClient):
     """Test case for not provided email."""
-    os.environ['ALLOWED_EMAIL_DOMAINS'] = os.getenv('ALLOWED_EMAIL_DOMAINS')
     response = test_client.post(
         login_url,
         json={
@@ -75,9 +81,9 @@ def test_email_not_provided(login_url, test_client: FlaskClient):
     )
     assert response.status_code == 400
 
+@pytest.mark.usefixtures("set_allowed_domains")
 def test_invalid_redirect_url(login_url, test_client: FlaskClient):
     """Test case for invalid redirect url."""
-    os.environ['ALLOWED_EMAIL_DOMAINS'] = os.getenv('ALLOWED_EMAIL_DOMAINS')
     response = test_client.post(
         login_url,
         json={
@@ -87,9 +93,9 @@ def test_invalid_redirect_url(login_url, test_client: FlaskClient):
     )
     assert response.status_code == 400
 
+@pytest.mark.usefixtures("set_allowed_domains")
 def test_empty_json(login_url, test_client: FlaskClient):
     """Test case for empty json body."""
-    os.environ['ALLOWED_EMAIL_DOMAINS'] = os.getenv('ALLOWED_EMAIL_DOMAINS')
     response = test_client.post(
         login_url,
         json={}
