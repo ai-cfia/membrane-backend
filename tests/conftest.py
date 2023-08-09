@@ -1,6 +1,5 @@
 import pytest
 from flask import Flask
-from flask.testing import FlaskClient
 from flask_session import Session
 
 # Import the Flask application instance from your app module
