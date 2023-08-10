@@ -1,6 +1,5 @@
 import pytest
 from flask import Flask
-from flask_session import Session
 
 # Import the Flask application instance from your app module
 from app import app as flask_app
@@ -9,10 +8,7 @@ from app import app as flask_app
 def app():
     """Flask application fixture for the tests."""
     flask_app.config['SESSION_TYPE'] = 'memory'
-    flask_app.config['SESSION_PERMANENT'] = False
-
-    session = Session()
-    session.init_app(flask_app)
+    flask_app.config['TESTING'] = True
 
     yield flask_app
     # pylint: disable=redefined-outer-name

@@ -13,8 +13,21 @@ from utils import is_valid_email
 
 logging.basicConfig(level=logging.DEBUG)
 
+KEY_VALUE = 'super-secret'
 app = Flask(__name__)
-app.config['JWT_SECRET_KEY'] = 'super-secret'  # Change this!
+app.config['JWT_SECRET_KEY'] = KEY_VALUE  # Change this!
+"""
+Note:  
+app.config['JWT_SECRET_KEY']: This is specifically used by the flask_jwt_extended extension to 
+encode and decode JWT tokens. This ensures that the JWT tokens remain tamper-proof.
+"""
+app.config['SECRET_KEY'] = KEY_VALUE
+"""
+Note: 
+'app.config['SECRET_KEY']': This is typically used by Flask for signing session cookies. If you're 
+using Flask's built-in session system (or Flask-Session with some storage types), you'll need 
+this key. This key ensures that data stored in user sessions remains tamper-proof between requests.
+"""
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=60)  # Set token expiry time
 jwt = JWTManager(app)
 env_path = Path('./') / '.env'

@@ -1,5 +1,6 @@
-# test_email_cases.py
-
+"""
+Email Test Cases
+"""
 import os
 from utils import is_valid_email
 
