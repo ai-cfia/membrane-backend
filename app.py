@@ -3,8 +3,8 @@ CFIA Louis Backend Flask Application
 """
 import logging
 from datetime import timedelta
-from pathlib import Path  # Python 3.6+ only
-from jwt.exceptions import InvalidTokenError
+from pathlib import Path
+from jwt import decode, exceptions as jwt_exceptions
 from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager, create_access_token, decode_token
 from flask import Flask, request, jsonify, session, make_response, redirect, url_for
@@ -12,6 +12,9 @@ from flask_session import Session
 from utils import is_valid_email
 
 logging.basicConfig(level=logging.DEBUG)
+
+with open('keys/public_key.pem', 'rb') as f:
+    PUBLIC_KEY = f.read()
 
 KEY_VALUE = 'super-secret'
 app = Flask(__name__)
@@ -29,6 +32,7 @@ using Flask's built-in session system (or Flask-Session with some storage types)
 this key. This key ensures that data stored in user sessions remains tamper-proof between requests.
 """
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=60)  # Set token expiry time
+app.config['PUBLIC_KEY'] = PUBLIC_KEY
 jwt = JWTManager(app)
 env_path = Path('./') / '.env'
 load_dotenv(dotenv_path=env_path)
@@ -47,6 +51,50 @@ def log_request_info():
     """
     app.logger.debug('Headers: %s', request.headers)
     app.logger.debug('Body: %s', request.get_data())
+
+@app.route('/set_redirect_url', methods=['POST'])
+def set_redirect_url():
+    """
+    Set a redirect URL based on the JWT token provided in the request.
+
+    The function expects a JSON body with a 'token' key containing a valid JWT.
+    The JWT should contain a 'redirect_url' claim, which is extracted and stored in the session.
+
+    Returns:
+        - 200 OK if the JWT is valid and the redirect URL is set successfully.
+        - 400 Bad Request if no JWT is provided or if there's a JWT decoding error.
+        - 500 Internal Server Error for unexpected issues.
+    """
+    request_data = request.get_json()
+    if not request_data:
+        return jsonify({'error': 'Invalid JSON payload.'}), 400
+
+    jwt_token = request.get_json().get('token')
+    if not jwt_token:
+        return jsonify({'error': 'No JWT provided.'}), 400
+
+    try:
+        # Decode the token using the PUBLIC KEY
+        decoded_token = decode(jwt_token, app.config['PUBLIC_KEY'], algorithms=['RS256'])
+
+        if 'redirect_url' not in decoded_token:
+            logging.error('JWT Token does not contain redirect_url')
+            return jsonify({'error': 'Token does not contain a redirect URL'}), 400
+
+        session['redirect_url'] = decoded_token['redirect_url']
+        return jsonify({'message': 'Redirect URL set successfully.'}), 200
+
+    except jwt_exceptions.ExpiredSignatureError:
+        logging.exception('JWT Token has expired')
+        return jsonify({'error': 'Token has expired'}), 400
+
+    except jwt_exceptions.InvalidTokenError as error:
+        logging.exception('JWT Token decoding error: %s', error)
+        return jsonify({'error': f'Invalid token. Reason: {str(error)}'}), 400
+
+    except Exception as error:
+        logging.exception('Unexpected error while processing token: %s', error)
+        return jsonify({'error': f'Unexpected error: {str(error)}'}), 500
 
 @app.route('/check_session', methods=['GET'])
 def check_session():
@@ -70,7 +118,7 @@ def check_session():
 
     if 'authenticated' in session and session['authenticated']:
         return jsonify({'message': 'User is authenticated.'}), 200
-    
+
     # - TODO: Implement redirection to Louis Login Frontend
     return jsonify({'message': 'User is not authenticated. Redirecting...'}), 200
 
@@ -91,17 +139,19 @@ def login():
     """
     data = request.get_json()
     email = data.get('email')
-    redirect_url = data.get('redirect_url')
 
-    # inside your login function after setting session variables
     logging.debug("Session Data: %s", session)
 
-    if email is None or redirect_url is None:
-        return jsonify({'error': 'Missing email or redirect URL.'}), 400
+    if email is None:
+        return jsonify({'error': 'Missing email.'}), 400
 
     if is_valid_email(email):
         if 'authenticated' in session and session['authenticated']:
             return jsonify({'message': 'Already authenticated.'}), 200
+
+        redirect_url = session.get('redirect_url')
+        if not redirect_url:
+            return jsonify({'error': 'No redirect URL set.'}), 400
 
         additional_claims = {"redirect_url": redirect_url}
         access_token = create_access_token(identity=email, additional_claims=additional_claims)
@@ -110,7 +160,6 @@ def login():
         print(verification_url)
         return jsonify({'message': 'Valid email address. Email sent with JWT link.'}), 200
 
-    # Note: No 'else' block here
     return jsonify({'error': 'Invalid email address.'}), 400
 
 @app.route('/verify_token', methods=['GET'])
@@ -144,7 +193,7 @@ def verify_token():
         response = make_response(redirect(redirect_url, code=302))
         return response
 
-    except InvalidTokenError as invalid_token_error:
+    except jwt_exceptions.InvalidTokenError as invalid_token_error:
         # Log the exception message to inspect the reason for the decoding failure
         logging.error('JWT Token decoding error: %s', invalid_token_error)
         return jsonify({'error': 'Invalid token.'}), 400

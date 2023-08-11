@@ -5,3 +5,4 @@ flask-jwt-extended
 pytest
 requests
 python-dotenv
+cryptography
