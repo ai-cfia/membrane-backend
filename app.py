@@ -4,7 +4,7 @@ CFIA Louis Backend Flask Application
 import logging
 from datetime import timedelta
 from pathlib import Path
-from jwt import decode, exceptions as jwt_exceptions
+from jwt import decode, get_unverified_header, exceptions as jwt_exceptions
 from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager, create_access_token, decode_token
 from flask import Flask, request, jsonify, session, make_response, redirect, url_for
@@ -13,15 +13,18 @@ from utils import is_valid_email
 
 logging.basicConfig(level=logging.DEBUG)
 
-with open('keys/public_key.pem', 'rb') as f:
-    PUBLIC_KEY = f.read()
+# Load multiple public keys from files
+KEYS = {
+    'app1': open('keys/test1_public_key.pem', 'rb').read(),
+    'app2': open('keys/test2_public_key.pem', 'rb').read(),
+}
 
 KEY_VALUE = 'super-secret'
 app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = KEY_VALUE
 app.config['SECRET_KEY'] = KEY_VALUE
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=60)
-app.config['PUBLIC_KEY'] = PUBLIC_KEY
+app.config['PUBLIC_KEYS'] = KEYS
 jwt = JWTManager(app)
 env_path = Path('./') / '.env'
 load_dotenv(dotenv_path=env_path)
@@ -51,6 +54,7 @@ def login():
         - JSON response with an appropriate message based on the authentication status.
         - Relevant HTTP status codes indicating the success or error of the request.
     """
+    jwt_token = request.args.get('token')
     data = request.get_json()
     email = data.get('email')
 
@@ -61,33 +65,26 @@ def login():
         return jsonify({'message': 'User is authenticated.'}), 200
 
     # Extracting JWT token from the URL parameter
-    jwt_token = request.args.get('token')
+    if jwt_token:
+        decoded_header = get_unverified_header(jwt_token)
+        app_id = decoded_header.get('appId')
 
-    # If the token is missing, raise an error
-    if not jwt_token:
-        return jsonify({'error': 'No JWT provided.'}), 400
+        if app_id not in KEYS:
+            return jsonify({'error': 'Invalid appId or app not supported.'}), 400
 
-    # Decoding the token and setting the redirect URL
-    try:
-        decoded_token = decode(jwt_token, app.config['PUBLIC_KEY'], algorithms=['RS256'])
-        if 'redirect_url' not in decoded_token:
-            logging.error('JWT Token does not contain redirect_url')
-            return jsonify({'error': 'Token does not contain a redirect URL'}), 400
-        session['redirect_url'] = decoded_token['redirect_url']
+        try:
+            decoded_token = decode(jwt_token, KEYS[app_id], algorithms=['RS256'])
+            if 'redirect_url' not in decoded_token:
+                logging.error('JWT Token does not contain redirect_url')
+                return jsonify({'error': 'Token does not contain a redirect URL'}), 400
+            session['redirect_url'] = decoded_token['redirect_url']
+        except jwt_exceptions.ExpiredSignatureError:
+            logging.exception('JWT Token has expired')
+            return jsonify({'error': 'Token has expired'}), 400
+        except jwt_exceptions.InvalidTokenError as error:
+            logging.exception('JWT Token decoding error: %s', error)
+            return jsonify({'error': f'Invalid token. Reason: {str(error)}'}), 400
 
-    except jwt_exceptions.ExpiredSignatureError:
-        logging.exception('JWT Token has expired')
-        return jsonify({'error': 'Token has expired'}), 400
-
-    except jwt_exceptions.InvalidTokenError as error:
-        logging.exception('JWT Token decoding error: %s', error)
-        return jsonify({'error': f'Invalid token. Reason: {str(error)}'}), 400
-
-    except Exception as error:
-        logging.exception('Unexpected error while processing token: %s', error)
-        return jsonify({'error': f'Unexpected error: {str(error)}'}), 500
-
-    # Check if email exists and validate
     if email is None:
         return jsonify({'error': 'Missing email.'}), 400
 
@@ -121,18 +118,22 @@ def verify_token():
 
     try:
         print("Received token:", token)
+        # Decode and verify the JWT token using the app's secret key
         decoded_token = decode_token(token)
         print("Decoded token:", decoded_token)
         email = decoded_token['sub']
         redirect_url = decoded_token['redirect_url']
 
+        # Set the 'authenticated' key in the session dictionary to indicate that the user is authenticated
         session['authenticated'] = True
         session['user_email'] = email
 
+        # Redirect to the extracted URL
         response = make_response(redirect(redirect_url, code=302))
         return response
 
     except jwt_exceptions.InvalidTokenError as invalid_token_error:
+        # Log the exception message to inspect the reason for the decoding failure
         logging.error('JWT Token decoding error: %s', invalid_token_error)
         return jsonify({'error': 'Invalid token.'}), 400
 
