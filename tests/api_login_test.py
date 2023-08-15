@@ -6,7 +6,7 @@ import pytest
 from flask.testing import FlaskClient
 from generate_jwt import generate_jwt
 
-TEST_PRIVATE_KEY = open('keys/test1_private_key.pem', 'rb').read()
+TEST_PRIVATE_KEY = open('tests/test_keys/test1_private_key.pem', 'rb').read()
 
 def generate_valid_jwt():
     """Generate a valid JWT token with the required app_id"""

@@ -11,15 +11,12 @@ from flask import Flask, request, jsonify, session, make_response, redirect, url
 from flask_session import Session
 from utils import (extract_jwt_token, extract_email_from_request, 
                    check_session_authentication, decode_jwt_token,
-                   get_jwt_redirect_url, is_valid_email)
-
+                   get_jwt_redirect_url, is_valid_email, load_keys_from_directory)
 logging.basicConfig(level=logging.DEBUG)
 
 # Load multiple public keys from files
-KEYS = {
-    'app1': open('keys/test1_public_key.pem', 'rb').read(),
-    'app2': open('keys/test2_public_key.pem', 'rb').read(),
-}
+KEYS_DIRECTORY = Path('tests/test_keys')
+KEYS = load_keys_from_directory(KEYS_DIRECTORY)
 
 KEY_VALUE = 'super-secret'
 app = Flask(__name__)

@@ -13,7 +13,7 @@ def generate_jwt(data, priv_key):
     header = {
     "alg": "RS256",
     "typ": "JWT",
-    "appId": "app1"
+    "appId": "test1"
 }
 
     jwt_token = jwt.encode(data, priv_key, algorithm='RS256', headers=header)
@@ -23,12 +23,12 @@ def generate_jwt(data, priv_key):
 
 if __name__ == "__main__":
     # Load the private key
-    with open('keys/test1_private_key.pem', 'rb') as f:
+    with open('tests/test_keys/test1_private_key.pem', 'rb') as f:
         private_key_content = f.read()
 
     # Sample data with a redirect_url and app_id
     sample_data = {
-        "app_id": "app1",  # specify the app_id here
+        "app_id": "test1",  # specify the app_id here
         "redirect_url": "https://www.google.com/"
     }
 

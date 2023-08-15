@@ -3,7 +3,10 @@ Utility functions
 """
 import os
 import re
+from pathlib import Path
+import logging
 from jwt import get_unverified_header, decode, exceptions as jwt_exceptions
+
 
 def is_valid_email(email):
     """
@@ -33,6 +36,9 @@ def decode_jwt_token(jwt_token, KEYS):
     decoded_header = get_unverified_header(jwt_token)
     app_id = decoded_header.get('appId')
 
+    logging.debug(f"Attempting to decode JWT for appId: {app_id}")
+    logging.debug(f"Available keys: {KEYS.keys()}")
+
     if app_id not in KEYS:
         return None, {'error': 'Invalid appId or app not supported.'}
 
@@ -48,3 +54,18 @@ def decode_jwt_token(jwt_token, KEYS):
 
 def get_jwt_redirect_url(session):
     return session.get('redirect_url')
+
+def load_keys_from_directory(directory_path: Path) -> dict:
+    """
+    Dynamically load keys based on files in a directory.
+    
+    Assumes files are named as 'testN_public_key.pem' where N is app ID.
+    """
+    keys = {}
+    for key_file in directory_path.iterdir():
+        if key_file.name.endswith("_public_key.pem"):
+            app_id = key_file.stem.split("_")[0]  # Extract 'testN' from 'testN_public_key.pem'
+            #  Read the contents of the key_file in binary mode using read_bytes()
+            keys[app_id] = key_file.read_bytes()
+
+    return keys
