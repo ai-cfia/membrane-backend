@@ -4,12 +4,14 @@ CFIA Louis Backend Flask Application
 import logging
 from datetime import timedelta
 from pathlib import Path
-from jwt import decode, get_unverified_header, exceptions as jwt_exceptions
+from jwt import exceptions as jwt_exceptions
 from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager, create_access_token, decode_token
 from flask import Flask, request, jsonify, session, make_response, redirect, url_for
 from flask_session import Session
-from utils import is_valid_email
+from utils import (extract_jwt_token, extract_email_from_request, 
+                   check_session_authentication, decode_jwt_token,
+                   get_jwt_redirect_url, is_valid_email)
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -54,42 +56,25 @@ def login():
         - JSON response with an appropriate message based on the authentication status.
         - Relevant HTTP status codes indicating the success or error of the request.
     """
-    jwt_token = request.args.get('token')
-    data = request.get_json()
-    email = data.get('email')
+    jwt_token = extract_jwt_token(request)
+    email = extract_email_from_request(request)
 
     logging.debug("Session Data: %s", session)
 
-    # Check session
-    if 'authenticated' in session and session['authenticated']:
+    if check_session_authentication(session):
         return jsonify({'message': 'User is authenticated.'}), 200
 
-    # Extracting JWT token from the URL parameter
     if jwt_token:
-        decoded_header = get_unverified_header(jwt_token)
-        app_id = decoded_header.get('appId')
+        decoded_token, error = decode_jwt_token(jwt_token, KEYS)
+        if error:
+            return jsonify(error), 400
+        session['redirect_url'] = decoded_token['redirect_url']
 
-        if app_id not in KEYS:
-            return jsonify({'error': 'Invalid appId or app not supported.'}), 400
-
-        try:
-            decoded_token = decode(jwt_token, KEYS[app_id], algorithms=['RS256'])
-            if 'redirect_url' not in decoded_token:
-                logging.error('JWT Token does not contain redirect_url')
-                return jsonify({'error': 'Token does not contain a redirect URL'}), 400
-            session['redirect_url'] = decoded_token['redirect_url']
-        except jwt_exceptions.ExpiredSignatureError:
-            logging.exception('JWT Token has expired')
-            return jsonify({'error': 'Token has expired'}), 400
-        except jwt_exceptions.InvalidTokenError as error:
-            logging.exception('JWT Token decoding error: %s', error)
-            return jsonify({'error': f'Invalid token. Reason: {str(error)}'}), 400
-
-    if email is None:
+    if not email:
         return jsonify({'error': 'Missing email.'}), 400
 
     if is_valid_email(email):
-        redirect_url = session.get('redirect_url')
+        redirect_url = get_jwt_redirect_url(session)
         if not redirect_url:
             return jsonify({'error': 'No redirect URL set.'}), 400
 

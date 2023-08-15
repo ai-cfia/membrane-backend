@@ -27,9 +27,7 @@ def test_valid_login(login_url, test_client: FlaskClient):
             "email": "valid.email@inspection.gc.ca",
         }
     )
-
-    assert response.status_code == 200
-
+    
     allowed_domains = os.getenv('ALLOWED_EMAIL_DOMAINS', '')
     print(allowed_domains)
     assert response.status_code == 200
