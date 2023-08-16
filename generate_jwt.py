@@ -13,7 +13,7 @@ def generate_jwt(data, priv_key):
     header = {
     "alg": "RS256",
     "typ": "JWT",
-    "appId": "test1"
+    "app_id": "test1"
 }
 
     jwt_token = jwt.encode(data, priv_key, algorithm='RS256', headers=header)

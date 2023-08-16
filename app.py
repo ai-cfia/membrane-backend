@@ -12,15 +12,13 @@ from flask import Flask, request, jsonify, session, make_response, redirect, url
 from flask_session import Session
 from request_helpers import (extract_email_from_request, check_session_authentication,
                              is_valid_email)
-from jwt_utils import (load_keys_from_directory, get_jwt_redirect_url, decode_jwt_token,
-                       extract_jwt_token, watch_keys_directory)
+from jwt_utils import (get_jwt_redirect_url, decode_jwt_token, extract_jwt_token)
 logging.basicConfig(level=logging.DEBUG)
 
 # Load multiple public keys from files
 KEYS_DIRECTORY = Path('tests/test_public_keys')
-KEYS = load_keys_from_directory(KEYS_DIRECTORY)
-
 KEY_VALUE = os.getenv('SECRET_KEY', '')
+
 app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = KEY_VALUE
 """
@@ -36,7 +34,6 @@ using Flask's built-in session system (or Flask-Session with some storage types)
 this key. This key ensures that data stored in user sessions remains tamper-proof between requests.
 """
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=60)
-app.config['PUBLIC_KEYS'] = KEYS
 jwt = JWTManager(app)
 env_path = Path('./') / '.env'
 load_dotenv(dotenv_path=env_path)
@@ -75,7 +72,7 @@ def login():
         return jsonify({'message': 'User is authenticated.'}), 200
 
     if jwt_token:
-        decoded_token, error = decode_jwt_token(jwt_token, KEYS)
+        decoded_token, error = decode_jwt_token(jwt_token, KEYS_DIRECTORY)
         if error:
             return jsonify(error), 400
         session['redirect_url'] = decoded_token['redirect_url']
@@ -132,18 +129,5 @@ def verify_token():
         logging.error('JWT Token decoding error: %s', invalid_token_error)
         return jsonify({'error': 'Invalid token.'}), 400
 
-@app.route('/reload_keys', methods=['GET'])
-def reload_keys_endpoint():
-    '''Endpoint to manually reload keys when the keys directory changes.'''
-    reload_keys()
-    return jsonify({"message": "Keys reloaded successfully."}), 200
-
-def reload_keys():
-    """Callback function to reload keys when the keys directory changes."""
-    global KEYS
-    KEYS = load_keys_from_directory(KEYS_DIRECTORY)
-
 if __name__ == '__main__':
-    # Watch the KEYS_DIRECTORY for changes and reload keys when changes occur.
-    watch_keys_directory(KEYS_DIRECTORY, reload_keys)
     app.run(debug=True)

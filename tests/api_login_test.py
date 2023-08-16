@@ -11,7 +11,7 @@ TEST_PRIVATE_KEY = open('tests/test_private_keys/test1_private_key.pem', 'rb').r
 def generate_valid_jwt():
     """Generate a valid JWT token with the required app_id"""
     jwt_data = {
-        "app_id": "app1",
+        "app_id": "test1",
         "redirect_url": "https://www.google.com/"
     }
     return generate_jwt(jwt_data, TEST_PRIVATE_KEY)
@@ -27,6 +27,7 @@ def test_valid_login(login_url, test_client: FlaskClient):
             "email": "valid.email@inspection.gc.ca",
         }
     )
+    print(response.data)
     
     allowed_domains = os.getenv('ALLOWED_EMAIL_DOMAINS', '')
     print(allowed_domains)
