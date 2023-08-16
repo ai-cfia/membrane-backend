@@ -16,7 +16,7 @@ from jwt_utils import (load_keys_from_directory, get_jwt_redirect_url, decode_jw
 logging.basicConfig(level=logging.DEBUG)
 
 # Load multiple public keys from files
-KEYS_DIRECTORY = Path('tests/test_pulic_keys')
+KEYS_DIRECTORY = Path('tests/test_public_keys')
 KEYS = load_keys_from_directory(KEYS_DIRECTORY)
 
 KEY_VALUE = 'super-secret'
