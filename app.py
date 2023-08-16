@@ -4,6 +4,7 @@ CFIA Louis Backend Flask Application
 import logging
 from datetime import timedelta
 from pathlib import Path
+import os
 from jwt import exceptions as jwt_exceptions
 from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager, create_access_token, decode_token
@@ -19,10 +20,21 @@ logging.basicConfig(level=logging.DEBUG)
 KEYS_DIRECTORY = Path('tests/test_public_keys')
 KEYS = load_keys_from_directory(KEYS_DIRECTORY)
 
-KEY_VALUE = 'super-secret'
+KEY_VALUE = os.getenv('SECRET_KEY', '')
 app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = KEY_VALUE
+"""
+Note:  
+app.config['JWT_SECRET_KEY']: This is specifically used by the flask_jwt_extended extension to 
+encode and decode JWT tokens. This ensures that the JWT tokens remain tamper-proof.
+"""
 app.config['SECRET_KEY'] = KEY_VALUE
+"""
+Note: 
+'app.config['SECRET_KEY']': This is typically used by Flask for signing session cookies. If you're 
+using Flask's built-in session system (or Flask-Session with some storage types), you'll need 
+this key. This key ensures that data stored in user sessions remains tamper-proof between requests.
+"""
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=60)
 app.config['PUBLIC_KEYS'] = KEYS
 jwt = JWTManager(app)
