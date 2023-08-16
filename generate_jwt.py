@@ -23,7 +23,7 @@ def generate_jwt(data, priv_key):
 
 if __name__ == "__main__":
     # Load the private key
-    with open('tests/test_keys/test1_private_key.pem', 'rb') as f:
+    with open('tests/test_private_keys/test1_private_key.pem', 'rb') as f:
         private_key_content = f.read()
 
     # Sample data with a redirect_url and app_id

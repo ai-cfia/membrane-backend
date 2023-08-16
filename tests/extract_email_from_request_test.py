@@ -1,6 +1,6 @@
 import io
 from werkzeug.wrappers import Request
-from utils import extract_email_from_request
+from request_helpers import extract_email_from_request
 # Loading the private key
 
 def create_request_with_json(data):

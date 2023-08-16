@@ -2,7 +2,7 @@
 Email Test Cases
 """
 import os
-from utils import is_valid_email
+from request_helpers import is_valid_email
 
 # pylint: disable=unused-argument
 def setup_module(module):

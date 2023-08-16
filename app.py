@@ -9,13 +9,14 @@ from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager, create_access_token, decode_token
 from flask import Flask, request, jsonify, session, make_response, redirect, url_for
 from flask_session import Session
-from utils import (extract_jwt_token, extract_email_from_request, 
-                   check_session_authentication, decode_jwt_token,
-                   get_jwt_redirect_url, is_valid_email, load_keys_from_directory)
+from request_helpers import (extract_email_from_request, check_session_authentication,
+                             is_valid_email)
+from jwt_utils import (load_keys_from_directory, get_jwt_redirect_url, decode_jwt_token,
+                       extract_jwt_token, watch_keys_directory)
 logging.basicConfig(level=logging.DEBUG)
 
 # Load multiple public keys from files
-KEYS_DIRECTORY = Path('tests/test_keys')
+KEYS_DIRECTORY = Path('tests/test_pulic_keys')
 KEYS = load_keys_from_directory(KEYS_DIRECTORY)
 
 KEY_VALUE = 'super-secret'
@@ -119,5 +120,18 @@ def verify_token():
         logging.error('JWT Token decoding error: %s', invalid_token_error)
         return jsonify({'error': 'Invalid token.'}), 400
 
+@app.route('/reload_keys', methods=['GET'])
+def reload_keys_endpoint():
+    '''Endpoint to manually reload keys when the keys directory changes.'''
+    reload_keys()
+    return jsonify({"message": "Keys reloaded successfully."}), 200
+
+def reload_keys():
+    """Callback function to reload keys when the keys directory changes."""
+    global KEYS
+    KEYS = load_keys_from_directory(KEYS_DIRECTORY)
+
 if __name__ == '__main__':
+    # Watch the KEYS_DIRECTORY for changes and reload keys when changes occur.
+    watch_keys_directory(KEYS_DIRECTORY, reload_keys)
     app.run(debug=True)

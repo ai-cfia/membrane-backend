@@ -1,9 +1,9 @@
 from werkzeug.wrappers import Request
-from utils import extract_jwt_token
+from jwt_utils import extract_jwt_token
 from generate_jwt import generate_jwt
 
 # Loading the private key
-TEST_PRIVATE_KEY = open('tests/test_keys/test1_private_key.pem', 'rb').read()
+TEST_PRIVATE_KEY = open('tests/test_private_keys/test1_private_key.pem', 'rb').read()
 
 def create_request_with_json(data):
     """Create a mock request object with the given JSON data."""
