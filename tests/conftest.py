@@ -1,8 +1,15 @@
 import pytest
 from flask import Flask
+from generate_jwt import generate_jwt
 
 # Import the Flask application instance from your app module
 from app import app as flask_app
+
+@pytest.fixture(scope='session')
+def test_private_key():
+    """Fixture to read and provide the private key."""
+    with open('tests/test_private_keys/test1_private_key.pem', 'rb') as f:
+        return f.read()
 
 @pytest.fixture
 def app():
@@ -32,3 +39,13 @@ def login_url(base_url):
 def set_allowed_domains(monkeypatch):  # noqa
     """Fixture to set the allowed email domains environment variable."""
     monkeypatch.setenv('ALLOWED_EMAIL_DOMAINS', 'gc.ca,canada.ca,inspection.gc.ca')
+
+@pytest.fixture
+def generate_jwt_token(test_private_key):
+    """Fixture to generate JWT tokens for testing purposes."""
+
+    def _generator(payload, headers=None):
+        return generate_jwt(payload, test_private_key, headers=headers)
+
+    return _generator
+

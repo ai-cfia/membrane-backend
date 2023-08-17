@@ -1,24 +1,22 @@
 from datetime import datetime, timedelta
 import jwt
 
-def generate_jwt(data, priv_key):
+def generate_jwt(data, priv_key, headers=None):
     """
     Generate a JWT using the given data and private key.
     """
     # Set the expiration time for the JWT
     data['exp'] = datetime.utcnow() + timedelta(hours=1)  # JWT expires in 1 hour
 
-    # Create the JWT using the RS256 algorithm
-    # MUST have the appId claim in its header.
-    header = {
-    "alg": "RS256",
-    "typ": "JWT",
-    "app_id": "test1"
-}
+    # Use the default header if none is provided
+    if headers is None:
+        headers = {
+            "alg": "RS256",
+            "typ": "JWT",
+            "app_id": "test1"
+        }
 
-    jwt_token = jwt.encode(data, priv_key, algorithm='RS256', headers=header)
-
-
+    jwt_token = jwt.encode(data, priv_key, algorithm='RS256', headers=headers)
     return jwt_token
 
 if __name__ == "__main__":
