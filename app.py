@@ -11,8 +11,11 @@ from flask_jwt_extended import JWTManager, create_access_token, decode_token
 from flask import Flask, request, jsonify, session, make_response, redirect, url_for
 from flask_session import Session
 from request_helpers import (extract_email_from_request, check_session_authentication,
-                             is_valid_email)
-from jwt_utils import (get_jwt_redirect_url, decode_jwt_token, extract_jwt_token)
+                             is_valid_email, extract_jwt_token_from_args, EmailError, InvalidTokenError, MissingTokenError)
+from jwt_utils import (get_jwt_redirect_url, decode_jwt_token, extract_jwt_token,
+                       JWTError, SessionError, JWTAppIdMissingError, JWTPublicKeyNotFoundError)
+from error_handlers import register_error_handlers
+
 logging.basicConfig(level=logging.DEBUG)
 
 # Load multiple public keys from files
@@ -20,27 +23,17 @@ KEYS_DIRECTORY = Path('tests/test_public_keys')
 KEY_VALUE = os.getenv('SECRET_KEY', '')
 
 app = Flask(__name__)
-app.config['JWT_SECRET_KEY'] = KEY_VALUE
-"""
-Note:  
-app.config['JWT_SECRET_KEY']: This is specifically used by the flask_jwt_extended extension to 
-encode and decode JWT tokens. This ensures that the JWT tokens remain tamper-proof.
-"""
-app.config['SECRET_KEY'] = KEY_VALUE
-"""
-Note: 
-'app.config['SECRET_KEY']': This is typically used by Flask for signing session cookies. If you're 
-using Flask's built-in session system (or Flask-Session with some storage types), you'll need 
-this key. This key ensures that data stored in user sessions remains tamper-proof between requests.
-"""
+app.config['JWT_SECRET_KEY'] = KEY_VALUE # This is specifically used by the flask_jwt_extended extension to encode and decode JWT tokens.
+app.config['SECRET_KEY'] = KEY_VALUE #  This is used by Flask for signing session cookies.
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=60)
 jwt = JWTManager(app)
-env_path = Path('./') / '.env'
-load_dotenv(dotenv_path=env_path)
+load_dotenv()
 
 # Configure Flask-Session
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
+
+register_error_handlers(app) # Registers custom error handlers for the Flask app to handle application-specific exceptions.
 
 @app.before_request
 def log_request_info():
@@ -63,36 +56,59 @@ def login():
         - JSON response with an appropriate message based on the authentication status.
         - Relevant HTTP status codes indicating the success or error of the request.
     """
-    jwt_token = extract_jwt_token(request)
-    email = extract_email_from_request(request)
-
     logging.debug("Session Data: %s", session)
 
+    # Check if the user is already authenticated based on session data.
     if check_session_authentication(session):
         return jsonify({'message': 'User is authenticated.'}), 200
 
+    # Try to extract JWT token from the request.
+    jwt_token = extract_jwt_token(request)
+
+    # If a JWT token is found, decode and validate it.
     if jwt_token:
-        decoded_token, error = decode_jwt_token(jwt_token, KEYS_DIRECTORY)
-        if error:
-            return jsonify(error), 400
-        session['redirect_url'] = decoded_token['redirect_url']
+        try:
+            # Decode the JWT token using the public key directory.
+            decoded_token = decode_jwt_token(jwt_token, KEYS_DIRECTORY)
+             # Store the redirect URL from the decoded token into the session.
+            session['redirect_url'] = decoded_token['redirect_url']
+        except JWTAppIdMissingError as exc:
+             # Handle case when the JWT token is missing the app_id claim.
+            raise JWTAppIdMissingError("Error: The JWT is missing an app_id.") from exc
+        except JWTPublicKeyNotFoundError as exc:
+            # Handle case when the public key corresponding to the JWT's app_id cannot be found.
+            raise JWTPublicKeyNotFoundError("Error: The public key corresponding to the JWT's app_id was not found.") from exc
+        except JWTError as error:
+             # Handle any other JWT-related errors.
+            raise error
 
+    # Extract email from the request data.
+    email = extract_email_from_request(request)
+
+    # Ensure that an email was provided in the request.
     if not email:
-        return jsonify({'error': 'Missing email.'}), 400
+        raise EmailError("Missing email.")
 
-    if is_valid_email(email):
-        redirect_url = get_jwt_redirect_url(session)
-        if not redirect_url:
-            return jsonify({'error': 'No redirect URL set.'}), 400
+    # Validate the provided email address.
+    if not is_valid_email(email):
+        raise EmailError("Invalid email address.")
 
-        additional_claims = {"redirect_url": redirect_url}
-        access_token = create_access_token(identity=email, additional_claims=additional_claims)
-        verification_url = url_for('verify_token', token=access_token, _external=True)
+    # Retrieve the redirect URL stored in the session.
+    redirect_url = get_jwt_redirect_url(session)
+    
+    # Ensure that a redirect URL is available in the session.
+    if not redirect_url:
+        raise SessionError("No redirect URL set.")
 
-        print(verification_url)
-        return jsonify({'message': 'Valid email address. Email sent with JWT link.'}), 200
+     # Create a new JWT token with the email as the identity and the redirect URL as an additional claim.
+    additional_claims = {"redirect_url": redirect_url}
+    access_token = create_access_token(identity=email, additional_claims=additional_claims)
+    # Construct the verification URL which includes the new JWT token.
+    verification_url = url_for('verify_token', token=access_token, _external=True)
 
-    return jsonify({'error': 'Invalid email address.'}), 400
+    print(verification_url)
+    return jsonify({'message': 'Valid email address. Email sent with JWT link.'}), 200
+
 
 @app.route('/verify_token', methods=['GET'])
 def verify_token():
@@ -103,15 +119,10 @@ def verify_token():
           'authenticated' and 'user_email' and redirect the user to the dashboard.
         - If the token is expired or invalid, return a JSON response with an error message.
     """
-    token = request.args.get('token')  # Extract token from URL parameters
-
-    if token is None:
-        return jsonify({'error': 'No token provided.'}), 400
-
     try:
-        print("Received token:", token)
-        # Decode and verify the JWT token using the app's secret key
-        decoded_token = decode_token(token)
+        token = extract_jwt_token_from_args(request)  # This can raise MissingTokenError.
+
+        decoded_token = decode_token(token)  # This will raise jwt_exceptions.InvalidTokenError if the token is invalid.
         print("Decoded token:", decoded_token)
         email = decoded_token['sub']
         redirect_url = decoded_token['redirect_url']
@@ -124,10 +135,15 @@ def verify_token():
         response = make_response(redirect(redirect_url, code=302))
         return response
 
-    except jwt_exceptions.InvalidTokenError as invalid_token_error:
-        # Log the exception message to inspect the reason for the decoding failure
-        logging.error('JWT Token decoding error: %s', invalid_token_error)
-        return jsonify({'error': 'Invalid token.'}), 400
+    except MissingTokenError as exc:
+        # Handle MissingTokenError specifically, if needed.
+        # Though this is optional because the Flask app's error handler will already handle this exception.
+        print("Handling MissingTokenError in verify_token")
+        raise exc
+    except jwt_exceptions.InvalidTokenError as exc:
+        # Explicitly raise our custom InvalidTokenError exception with added context.
+        raise InvalidTokenError("Invalid JWT token.") from exc
+
 
 if __name__ == '__main__':
     app.run(debug=True)
