@@ -5,6 +5,7 @@ import logging
 from datetime import timedelta
 from pathlib import Path
 import os
+import uuid
 from jwt import exceptions as jwt_exceptions
 from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager, create_access_token, decode_token
@@ -19,18 +20,21 @@ from error_handlers import register_error_handlers
 logging.basicConfig(level=logging.DEBUG)
 
 # Load multiple public keys from files
-KEYS_DIRECTORY = Path('tests/test_public_keys')
-KEY_VALUE = os.getenv('SECRET_KEY', '')
+keys_directory_path = os.getenv('KEYS_DIRECTORY', default='tests/test_public_keys')
+KEYS_DIRECTORY = Path(keys_directory_path)
+KEY_VALUE = os.getenv('SECRET_KEY') or str(uuid.uuid4())
 
 app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = KEY_VALUE # This is specifically used by the flask_jwt_extended extension to encode and decode JWT tokens.
 app.config['SECRET_KEY'] = KEY_VALUE #  This is used by Flask for signing session cookies.
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=60)
+# JWT_ACCESS_TOKEN_EXPIRES setup
+jwt_expiration_minutes = os.getenv('JWT_ACCESS_TOKEN_EXPIRES_MINUTES', default="60")
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=int(jwt_expiration_minutes))
 jwt = JWTManager(app)
 load_dotenv()
 
 # Configure Flask-Session
-app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_TYPE'] = os.getenv('SESSION_TYPE', default='filesystem')
 Session(app)
 
 register_error_handlers(app) # Registers custom error handlers for the Flask app to handle application-specific exceptions.
