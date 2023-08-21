@@ -13,12 +13,6 @@ class JWTPublicKeyNotFoundError(JWTError):
     """Raised when the public key for a given app_id is not found."""
     pass
 
-class SessionError(Exception):
-    """
-    Base Class for Session related errors
-    """
-    pass
-
 def extract_jwt_token(request):
     """
     Extract JWT token from the provided request object.
@@ -53,12 +47,3 @@ def decode_jwt_token(jwt_token, keys_directory: Path):
 
     except (jwt_exceptions.InvalidTokenError, jwt_exceptions.DecodeError) as error:
         raise JWTError(str(error)) from error
-
-def get_jwt_redirect_url(session):
-    """
-    Retrieve the JWT redirect URL from the provided session.
-    """
-    redirect_url = session.get('redirect_url')
-    if not redirect_url:
-        raise SessionError("No redirect URL found in session.")
-    return redirect_url

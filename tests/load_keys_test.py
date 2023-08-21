@@ -47,3 +47,27 @@ def test_decode_jwt_with_invalid_token():
     invalid_jwt = "invalid.jwt.token"
     with pytest.raises(DecodeError):
         decode_jwt_token(invalid_jwt, TEST_KEY_DIR)
+
+def test_decode_jwt_invalid_signature(generate_jwt_token):
+    """Test decoding a JWT token with a tampered signature."""
+    jwt_token = generate_jwt_token({"data": "test_data"})
+
+    # Tampering with the signature to make it invalid.
+    # Flipping some characters instead of appending 'invalid'
+    jwt_token = jwt_token[:-3] + "abc"
+
+    print(jwt_token)
+
+    with pytest.raises(JWTError, match="Signature verification failed"):
+        decode_jwt_token(jwt_token, TEST_KEY_DIR)
+
+def test_decode_jwt_malformed_header(generate_jwt_token):
+    """Test decoding a JWT token with a malformed header."""
+    jwt_token = generate_jwt_token({"data": "test_data"})
+    # Manipulating the token to make its header malformed.
+    jwt_parts = jwt_token.split('.')
+    jwt_parts[0] = jwt_parts[0] + 'malformed'
+    jwt_token = '.'.join(jwt_parts)
+
+    with pytest.raises(DecodeError):
+        decode_jwt_token(jwt_token, TEST_KEY_DIR)
