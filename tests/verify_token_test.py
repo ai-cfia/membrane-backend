@@ -1,10 +1,12 @@
 """
 Verify Token Test Cases
 """
+import time
+from pathlib import Path
 from flask import Flask
-import pytest
-from flask_jwt_extended import create_access_token
 from flask.testing import FlaskClient
+import pytest
+from jwt_utils import encode_jwt_token
 
 # Constants
 SECRET_KEY = 'super-secret'
@@ -26,15 +28,27 @@ def test_invalid_token(test_client: FlaskClient):
 @pytest.mark.usefixtures("set_allowed_domains")
 def test_valid_token(test_client: FlaskClient, app: Flask):
     """Test case for valid token."""
+    
     # Using the Flask application context
     with app.app_context():
-        # Create a valid JWT token
+        # Mimic the /login payload
         email = "test.email@inspection.gc.ca"
-        redirect_url = "localhost:3000/"
-        claims = {"redirect_url": redirect_url}
-        token = create_access_token(identity=email, additional_claims=claims)
+        redirect_url = ""
+        
+        expiration_time = time.time() + 900  # Token will be valid for 15 minutes
+        payload = {
+            "sub": email,
+            "redirect_url": redirect_url,
+            "app_id": "test2",
+            "exp": expiration_time
+        }
 
-    response = test_client.get(f"/verify_token?token={token}")
-    # Here we're just checking if the token is successfully verified.
-    # You can extend this test to check for specific session data or response headers based on your logic.
-    assert response.status_code == 302  # Assuming a successful token leads to a redirection
+        # Using the private key to encode the JWT token
+        jwt_token = encode_jwt_token(payload, Path("tests/test_private_keys/test2_private_key.pem"))
+    # Use the generated token to test the /verify_token endpoint
+    response = test_client.get(f"/verify_token?token={jwt_token}")
+    
+    # Check for successful redirection
+    assert response.status_code == 302
+    # Optional: Check if redirection URL matches the provided redirect_url
+    assert response.location == redirect_url

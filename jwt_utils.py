@@ -1,5 +1,5 @@
 from pathlib import Path
-from jwt import get_unverified_header, decode, exceptions as jwt_exceptions
+from jwt import get_unverified_header, decode, encode, exceptions as jwt_exceptions
 
 class JWTError(Exception):
     """Base Class for JWT errors"""
@@ -13,23 +13,39 @@ class JWTPublicKeyNotFoundError(JWTError):
     """Raised when the public key for a given app_id is not found."""
     pass
 
+class JWTPrivateKeyNotFoundError(JWTError):
+    """Raised when the private key is not found."""
+    pass
+
 def extract_jwt_token(request):
     """
     Extract JWT token from the provided request object.
     """
     return request.args.get('token')
 
+def encode_jwt_token(payload, private_key_path: Path):
+    """
+    Encode the payload using the private key for RS256 algorithm.
+    """
+    if not private_key_path.exists():
+        raise JWTPrivateKeyNotFoundError(f'Private key not found at: {private_key_path}.')
+
+    with private_key_path.open('r') as key_file:
+        private_key = key_file.read()
+
+    jwt_token = encode(payload, private_key, algorithm='RS256')
+    return jwt_token
+
 def decode_jwt_token(jwt_token, keys_directory: Path):
     """
     Decode the JWT token using the correct public key based on app_id.
     """
-    # Extract the header without decoding the signature or payload
-    header = get_unverified_header(jwt_token)
+     # Temporarily decode the token to fetch the app_id
+    unverified_decoded_token = decode(jwt_token, options={"verify_signature": False})
+    if 'app_id' not in unverified_decoded_token:
+        raise JWTAppIdMissingError('No app_id in JWT payload.')
 
-    if 'app_id' not in header:
-        raise JWTAppIdMissingError('No app_id in JWT header.')
-
-    app_id = header['app_id']
+    app_id = unverified_decoded_token['app_id']
 
     # Look for a corresponding public key file
     public_key_path = keys_directory / f"{app_id}_public_key.pem"
