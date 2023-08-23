@@ -1,3 +1,6 @@
+"""
+Pytest configuration and shared fixtures for test setup.
+"""
 import pytest
 from flask import Flask
 from generate_jwt import generate_jwt
@@ -48,4 +51,3 @@ def generate_jwt_token(test_private_key):
         return generate_jwt(payload, test_private_key, headers=headers)
 
     return _generator
-

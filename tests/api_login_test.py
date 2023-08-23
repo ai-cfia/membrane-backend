@@ -1,5 +1,5 @@
 """
-Login API Test
+Login API Tests.
 """
 import os
 import pytest

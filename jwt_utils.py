@@ -1,21 +1,17 @@
+"""
+Utilities for encoding, decoding, and validating JWT tokens.
+"""
 from pathlib import Path
-from jwt import get_unverified_header, decode, encode, exceptions as jwt_exceptions
+from jwt import decode, encode, exceptions as jwt_exceptions
 
 class JWTError(Exception):
     """Base Class for JWT errors"""
-    pass
-
 class JWTAppIdMissingError(JWTError):
     """Raised when the app_id is missing in JWT header."""
-    pass
-
 class JWTPublicKeyNotFoundError(JWTError):
     """Raised when the public key for a given app_id is not found."""
-    pass
-
 class JWTPrivateKeyNotFoundError(JWTError):
     """Raised when the private key is not found."""
-    pass
 
 def extract_jwt_token(request):
     """

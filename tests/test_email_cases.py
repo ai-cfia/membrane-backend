@@ -1,5 +1,5 @@
 """
-Email Test Cases
+Email Test Cases.
 """
 import os
 from request_helpers import is_valid_email, EmailError

@@ -1,3 +1,6 @@
+"""
+Utility script to generate JWT tokens for testing and development.
+"""
 from datetime import datetime, timedelta
 import jwt
 

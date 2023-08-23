@@ -1,7 +1,9 @@
+"""
+Unit tests for the `extract_email_from_request` function.
+"""
 import io
 from werkzeug.wrappers import Request
 from request_helpers import extract_email_from_request
-# Loading the private key
 
 def create_request_with_json(data):
     """Create a mock request object with the given JSON data."""
@@ -14,7 +16,7 @@ def create_request_with_json(data):
     request = Request(environ)
 
     # Update get_data to accept cache argument and return our data
-    request.get_data = lambda cache=True: data  
+    request.get_data = lambda cache=True: data
     return request
 
 def test_extract_valid_email():

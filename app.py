@@ -113,11 +113,11 @@ def login():
 
         # Create the payload with the email as the identity and the redirect URL as an additional claim.
         expiration_time = time.time() + 900  # Token will be valid for 15 minutes
-        
+
         payload = {
             "sub": email,
             "redirect_url": redirect_url,
-            "app_id": APP_ID,  # Replace 'test2' with the appropriate app ID
+            "app_id": APP_ID,
             "exp": expiration_time
         }
 
@@ -127,6 +127,7 @@ def login():
         # Construct the verification URL which includes the new JWT token.
         verification_url = url_for('verify_token', token=jwt_token, _external=True)
         print(verification_url)
+        #TODO: Send email to user containing verification url.
         return jsonify({'message': 'Valid email address. Email sent with JWT link.'}), 200
 
     except (JWTError, RequestError) as error:
@@ -145,7 +146,7 @@ def verify_token():
         - If the token is expired or invalid, return a JSON response with an error message.
     """
     try:
-        token = extract_jwt_token_from_args(request, TOKEN_BLACKLIST)  # This can raise MissingTokenError.
+        token = extract_jwt_token_from_args(request, TOKEN_BLACKLIST)
         # After successful verification, add token to blacklist.
         TOKEN_BLACKLIST.add(token)
 
@@ -164,7 +165,6 @@ def verify_token():
     except (MissingTokenError, InvalidTokenError, jwt_exceptions.InvalidTokenError) as error:
         # Print the stack trace for debugging purposes
         print(traceback.format_exc())
-
         error_message = str(error)
         if isinstance(error, jwt_exceptions.InvalidTokenError):
             error_message = "Invalid JWT token."

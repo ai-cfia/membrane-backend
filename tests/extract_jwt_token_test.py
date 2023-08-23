@@ -1,3 +1,6 @@
+"""
+Unit tests for the `extract_jwt_token` function.
+"""
 from werkzeug.wrappers import Request
 from jwt_utils import extract_jwt_token
 from generate_jwt import generate_jwt
