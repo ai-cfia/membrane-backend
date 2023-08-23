@@ -61,6 +61,8 @@ if not PRIVATE_KEYS_DIRECTORY.exists():
     raise ValueError(f"The directory {PRIVATE_KEYS_DIRECTORY} for private keys does not exist. Please specify a valid directory.")
 
 
+TOKEN_BLACKLIST = set()  # A basic in-memory store for simplicity;
+
 # Configure Flask-Session
 app.config['SESSION_TYPE'] = os.getenv('SESSION_TYPE', default='filesystem')
 Session(app)
@@ -143,10 +145,11 @@ def verify_token():
         - If the token is expired or invalid, return a JSON response with an error message.
     """
     try:
-        token = extract_jwt_token_from_args(request)  # This can raise MissingTokenError.
+        token = extract_jwt_token_from_args(request, TOKEN_BLACKLIST)  # This can raise MissingTokenError.
+        # After successful verification, add token to blacklist.
+        TOKEN_BLACKLIST.add(token)
 
         decoded_token = decode_jwt_token(token, PUBLIC_KEYS_DIRECTORY)
-        print("Decoded token:", decoded_token)
         email = decoded_token['sub']
         redirect_url = decoded_token['redirect_url']
 

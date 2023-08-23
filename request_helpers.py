@@ -38,11 +38,15 @@ def extract_email_from_request(request):
 def check_session_authentication(session):
     return 'authenticated' in session and session['authenticated']
 
-def extract_jwt_token_from_args(request):
+def extract_jwt_token_from_args(request, token_blacklist):
     token = request.args.get('token')  # Extract token from URL parameters
 
     if token is None:
         raise MissingTokenError("No token provided.")
+    
+    # Check if token is in the blacklist.
+    if token in token_blacklist:
+        raise InvalidTokenError("This token has already been used.")
 
     return token
 
