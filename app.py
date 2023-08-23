@@ -28,13 +28,25 @@ app = Flask(__name__)
 # Load environment variables
 load_dotenv()
 
-# Configure JWT-related settings
-KEY_VALUE = os.getenv('SECRET_KEY') or str(uuid.uuid4())
-app.config['JWT_SECRET_KEY'] = KEY_VALUE  # Used by flask_jwt_extended for encoding/decoding JWT tokens.
-app.config['SECRET_KEY'] = KEY_VALUE  # Used by Flask for signing session cookies.
-jwt_expiration_minutes = os.getenv('JWT_ACCESS_TOKEN_EXPIRES_MINUTES', default="60")
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=int(jwt_expiration_minutes))
-app.config['SESSION_COOKIE_SECURE'] = True # Session cookie is only sent over HTTPS
+# Configuration for JWT and session settings
+# Fetch secret key or generate a new one if not available
+KEY_VALUE = os.getenv('SECRET_KEY', str(uuid.uuid4()))
+# Set secret key configurations for JWT and Flask session
+app.config['JWT_SECRET_KEY'] = KEY_VALUE
+app.config['SECRET_KEY'] = KEY_VALUE
+
+# Configure JWT expiration from environment variable with default of 60 minutes
+jwt_expiration_minutes = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES_MINUTES', "60"))
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=jwt_expiration_minutes)
+
+# Configure session lifetime from environment variable with default of 30 minutes
+session_lifetime_minutes = int(os.environ.get('SESSION_LIFETIME_MINUTES', 30))
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=session_lifetime_minutes)
+
+# Configure session cookie to be secure (sent over HTTPS only)
+app.config['SESSION_COOKIE_SECURE'] = True
+
+# Initialize JWT Manager with the app
 jwt = JWTManager(app)
 
 # Configuration for public keys
