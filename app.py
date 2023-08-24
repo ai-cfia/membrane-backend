@@ -2,12 +2,11 @@
 CFIA Louis Backend Flask Application
 """
 import logging
-from datetime import timedelta
+from datetime import timedelta, datetime
 from pathlib import Path
 import os
 import uuid
 import traceback
-import time
 from jwt import exceptions as jwt_exceptions
 from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager
@@ -35,9 +34,8 @@ KEY_VALUE = os.getenv('SECRET_KEY', str(uuid.uuid4()))
 app.config['JWT_SECRET_KEY'] = KEY_VALUE
 app.config['SECRET_KEY'] = KEY_VALUE
 
-# Configure JWT expiration from environment variable with default of 60 minutes
-jwt_expiration_minutes = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES_MINUTES', "60"))
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=jwt_expiration_minutes)
+# Configure JWT expiration from environment variable with default of 30 minutes
+jwt_expiration_minutes = int(os.environ.get('JWT_ACCESS_TOKEN_EXPIRES_MINUTES', 30))
 
 # Configure session lifetime from environment variable with default of 30 minutes
 session_lifetime_minutes = int(os.environ.get('SESSION_LIFETIME_MINUTES', 30))
@@ -50,15 +48,15 @@ app.config['SESSION_COOKIE_SECURE'] = True
 jwt = JWTManager(app)
 
 # Configuration for public keys
-keys_directory_path_public = os.getenv('PUBLIC_KEYS_DIRECTORY', default='tests/test_public_keys')
+keys_directory_path_public = os.getenv('PUBLIC_KEYS_DIRECTORY', default='keys/public_keys')
 PUBLIC_KEYS_DIRECTORY = Path(keys_directory_path_public)
 
 # Configuration for private keys
-keys_directory_path_private = os.getenv('PRIVATE_KEYS_DIRECTORY', default='tests/test_private_keys')
+keys_directory_path_private = os.getenv('PRIVATE_KEYS_DIRECTORY', default='keys/private_keys')
 PRIVATE_KEYS_DIRECTORY = Path(keys_directory_path_private)
 
-# Retrieve the application ID from environment variables; default to 'test2' if not set
-APP_ID = os.getenv('APP_ID', default='test2')
+# Retrieve the application ID from environment variables; default to '' if not set
+APP_ID = os.getenv('APP_ID', default='') #TODO: Set default value
 private_key_path = PRIVATE_KEYS_DIRECTORY / f"{APP_ID}_private_key.pem"
 
 # Check if the private key file exists for the given APP_ID
@@ -123,13 +121,15 @@ def login():
         # Extract and validate email and redirect URL from the request and session.
         email = extract_email_from_request(request)
         # Create the payload with the email as the identity and the redirect URL as an additional claim.
-        expiration_time = time.time() + 900  # Token will be valid for 15 minutes
-
+        print("JWT Expiry set for:", jwt_expiration_minutes, "minutes")
+        expiration_time = datetime.utcnow() + timedelta(minutes=jwt_expiration_minutes)
+        expiration_timestamp = int(expiration_time.timestamp())
+        print("expiration time: " + str(expiration_timestamp))
         payload = {
             "sub": email,
             "redirect_url": session['redirect_url'],
             "app_id": APP_ID,
-            "exp": expiration_time
+            "exp": expiration_timestamp
         }
 
         current_private_key_path  = PRIVATE_KEYS_DIRECTORY / f"{APP_ID}_private_key.pem"
@@ -161,9 +161,11 @@ def verify_token():
         # After successful verification, add token to blacklist.
         TOKEN_BLACKLIST.add(token)
 
+        # Decode token
         decoded_token = decode_jwt_token(token, PUBLIC_KEYS_DIRECTORY)
         email = decoded_token['sub']
         redirect_url = decoded_token['redirect_url']
+        print(redirect_url)
 
         # Set the 'authenticated' key in the session dictionary to indicate that the user is authenticated
         session['authenticated'] = True
@@ -173,12 +175,15 @@ def verify_token():
         response = make_response(redirect(redirect_url, code=302))
         return response
 
-    except (MissingTokenError, InvalidTokenError, jwt_exceptions.InvalidTokenError) as error:
+    except (JWTError, MissingTokenError, InvalidTokenError, jwt_exceptions.ExpiredSignatureError, jwt_exceptions.InvalidTokenError) as error:
         # Print the stack trace for debugging purposes
         print(traceback.format_exc())
-        error_message = str(error)
-        if isinstance(error, jwt_exceptions.InvalidTokenError):
+        if isinstance(error, jwt_exceptions.ExpiredSignatureError):
+            error_message = "Expired JWT token."
+        elif isinstance(error, jwt_exceptions.InvalidTokenError):
             error_message = "Invalid JWT token."
+        else:
+            error_message = str(error)
         return jsonify({'error': error_message}), 400
 
 if __name__ == '__main__':

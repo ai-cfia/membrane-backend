@@ -3,6 +3,7 @@ Verify Token Test Cases.
 """
 import time
 from pathlib import Path
+from datetime import timedelta, datetime
 from flask import Flask
 from flask.testing import FlaskClient
 import pytest
@@ -35,12 +36,13 @@ def test_valid_token(test_client: FlaskClient, app: Flask):
         email = "test.email@inspection.gc.ca"
         redirect_url = "https://www.google.com/"
 
-        expiration_time = time.time() + 900  # Token will be valid for 15 minutes
+        expiration_time = datetime.utcnow() + timedelta(minutes=15)
+        expiration_timestamp = int(expiration_time.timestamp())
         payload = {
             "sub": email,
             "redirect_url": redirect_url,
             "app_id": "test2",
-            "exp": expiration_time
+            "exp": expiration_timestamp
         }
 
         # Using the private key to encode the JWT token
@@ -63,12 +65,13 @@ def test_blacklisted_token(test_client: FlaskClient, app: Flask):
         email = "test.email@inspection.gc.ca"
         redirect_url = "https://www.google.com/"
 
-        expiration_time = time.time() + 900  # Token will be valid for 15 minutes
+        expiration_time = datetime.utcnow() + timedelta(minutes=2)
+        expiration_timestamp = int(expiration_time.timestamp())
         payload = {
             "sub": email,
             "redirect_url": redirect_url,
             "app_id": "test2",
-            "exp": expiration_time
+            "exp": expiration_timestamp
         }
 
         # Using the private key to encode the JWT token

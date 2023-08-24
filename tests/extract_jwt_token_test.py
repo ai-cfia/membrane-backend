@@ -82,4 +82,3 @@ def test_extract_jwt_with_other_parameters():
 
     token = extract_jwt_token(mock_request, mock_session)
     assert token == valid_jwt, f"Expected token to be {valid_jwt}, but got {token}"
-

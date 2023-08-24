@@ -9,7 +9,9 @@ def generate_jwt(data, priv_key, headers=None):
     Generate a JWT using the given data and private key.
     """
     # Set the expiration time for the JWT
-    data['exp'] = datetime.utcnow() + timedelta(hours=1)  # JWT expires in 1 hour
+    expiration_time = datetime.utcnow() + timedelta(minutes=30)
+    expiration_timestamp = int(expiration_time.timestamp())
+    data['exp'] = int(expiration_timestamp)
 
     # Use the default header if none is provided
     if headers is None:

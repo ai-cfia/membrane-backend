@@ -2,6 +2,7 @@
 Utilities for encoding, decoding, and validating JWT tokens.
 """
 from pathlib import Path
+from datetime import datetime
 from jwt import decode, encode, exceptions as jwt_exceptions
 
 class JWTError(Exception):
@@ -65,6 +66,17 @@ def decode_jwt_token(jwt_token, keys_directory: Path):
         redirect_url = decoded_token['redirect_url']
         if not redirect_url:
             raise JWTError("No redirect URL found in session.")
+        
+        expired_time = decoded_token['exp']
+
+        # Get current time
+        current_time = datetime.utcnow()
+        current_timestamp = int(current_time.timestamp())  # Convert datetime to timestamp
+        
+        # Check for token expiration
+        if current_timestamp > expired_time:
+            raise JWTError("JWT token has expired.")
+        
         return decoded_token
 
     except (jwt_exceptions.InvalidTokenError, jwt_exceptions.DecodeError) as error:
