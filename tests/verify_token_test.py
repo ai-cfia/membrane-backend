@@ -33,7 +33,7 @@ def test_valid_token(test_client: FlaskClient, app: Flask):
     with app.app_context():
         # Mimic the /login payload
         email = "test.email@inspection.gc.ca"
-        redirect_url = ""
+        redirect_url = "https://www.google.com/"
 
         expiration_time = time.time() + 900  # Token will be valid for 15 minutes
         payload = {
@@ -61,7 +61,7 @@ def test_blacklisted_token(test_client: FlaskClient, app: Flask):
     with app.app_context():
         # Mimic the /login payload
         email = "test.email@inspection.gc.ca"
-        redirect_url = ""
+        redirect_url = "https://www.google.com/"
 
         expiration_time = time.time() + 900  # Token will be valid for 15 minutes
         payload = {

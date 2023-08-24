@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager
 from flask import Flask, request, jsonify, session, make_response, redirect, url_for
 from flask_session import Session
-from request_helpers import (extract_and_validate_request_data, check_session_authentication,
+from request_helpers import (extract_email_from_request, check_session_authentication,
                              extract_jwt_token_from_args, InvalidTokenError,
                              MissingTokenError, RequestError)
 from jwt_utils import (decode_jwt_token, extract_jwt_token, encode_jwt_token,
@@ -111,7 +111,7 @@ def login():
             return jsonify({'message': 'User is authenticated.'}), 200
 
         # Try to extract JWT token from the request.
-        jwt_token = extract_jwt_token(request)
+        jwt_token = extract_jwt_token(request, session)
 
         # If a JWT token is found, decode and validate it.
         if jwt_token:
@@ -121,14 +121,13 @@ def login():
             session['redirect_url'] = decoded_token['redirect_url']
 
         # Extract and validate email and redirect URL from the request and session.
-        email, redirect_url = extract_and_validate_request_data(request, session)
-
+        email = extract_email_from_request(request)
         # Create the payload with the email as the identity and the redirect URL as an additional claim.
         expiration_time = time.time() + 900  # Token will be valid for 15 minutes
 
         payload = {
             "sub": email,
-            "redirect_url": redirect_url,
+            "redirect_url": session['redirect_url'],
             "app_id": APP_ID,
             "exp": expiration_time
         }

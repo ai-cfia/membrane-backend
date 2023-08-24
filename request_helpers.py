@@ -25,10 +25,6 @@ def is_valid_email(email):
         raise EmailError(f"Invalid email address: {email}")
     return True
 
-def extract_email_from_request(request):
-    """Extract the email address from the given request object."""
-    return request.get_json().get('email')
-
 def check_session_authentication(session):
     """Verify if the current session is authenticated."""
     return 'authenticated' in session and session['authenticated']
@@ -46,11 +42,11 @@ def extract_jwt_token_from_args(request, token_blacklist):
 
     return token
 
-def extract_and_validate_request_data(request, session):
+def extract_email_from_request(request):
     """Extract and validate email and redirect_url from request and session."""
 
     # Extract email from the request data.
-    email = extract_email_from_request(request)
+    email = request.get_json().get('email')
 
     # Ensure that an email was provided in the request.
     if not email:
@@ -60,9 +56,4 @@ def extract_and_validate_request_data(request, session):
     if not is_valid_email(email):
         raise EmailError("Invalid email address.")
 
-    # Retrieve the redirect URL stored in the session.
-    redirect_url = session.get('redirect_url')
-    if not redirect_url:
-        raise RequestError("No redirect URL found in session.")
-
-    return email, redirect_url
+    return email

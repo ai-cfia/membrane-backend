@@ -13,11 +13,17 @@ class JWTPublicKeyNotFoundError(JWTError):
 class JWTPrivateKeyNotFoundError(JWTError):
     """Raised when the private key is not found."""
 
-def extract_jwt_token(request):
+def extract_jwt_token(request, session):
     """
     Extract JWT token from the provided request object.
     """
-    return request.args.get('token')
+    jwt_token = request.args.get('token')
+    redirect_url = session.get('redirect_url')
+
+    if not jwt_token and not redirect_url:
+        raise JWTError("No JWT token provided in headers and no redirect URL in session.")
+
+    return jwt_token
 
 def encode_jwt_token(payload, private_key_path: Path):
     """
@@ -55,6 +61,10 @@ def decode_jwt_token(jwt_token, keys_directory: Path):
     try:
         # Decode the token using the fetched public key
         decoded_token = decode(jwt_token, public_key, algorithms=['RS256'])
+        # Retrieve the redirect URL stored in the session.
+        redirect_url = decoded_token['redirect_url']
+        if not redirect_url:
+            raise JWTError("No redirect URL found in session.")
         return decoded_token
 
     except (jwt_exceptions.InvalidTokenError, jwt_exceptions.DecodeError) as error:
