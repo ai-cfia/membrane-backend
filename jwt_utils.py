@@ -13,8 +13,10 @@ class JWTPublicKeyNotFoundError(JWTError):
     """Raised when the public key for a given app_id is not found."""
 class JWTPrivateKeyNotFoundError(JWTError):
     """Raised when the private key is not found."""
+class InvalidTokenError(JWTError):
+    """Raised when the provided token is invalid."""
 
-def extract_jwt_token(request, session):
+def extract_jwt_token(request, session, token_blacklist):
     """
     Extract JWT token from the provided request object.
     """
@@ -23,6 +25,10 @@ def extract_jwt_token(request, session):
 
     if not jwt_token and not redirect_url:
         raise JWTError("No JWT token provided in headers and no redirect URL in session.")
+    
+        # Check if token is in the blacklist.
+    if jwt_token in token_blacklist:
+        raise InvalidTokenError("This token has already been used.")
 
     return jwt_token
 

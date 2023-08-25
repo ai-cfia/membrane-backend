@@ -1,7 +1,6 @@
 """
 Verify Token Test Cases.
 """
-import time
 from pathlib import Path
 from datetime import timedelta, datetime
 from flask import Flask
@@ -16,13 +15,13 @@ ALGORITHM = 'HS256'
 @pytest.mark.usefixtures("set_allowed_domains")
 def test_missing_token(test_client: FlaskClient):
     """Test case for missing token."""
-    response = test_client.get("/verify_token")
+    response = test_client.get("/authenticate")
     assert response.status_code == 400
 
 @pytest.mark.usefixtures("set_allowed_domains")
 def test_invalid_token(test_client: FlaskClient):
     """Test case for invalid token."""
-    response = test_client.get("/verify_token?token=invalidtokenhere")
+    response = test_client.get("/authenticate?token=invalidtokenhere")
     print(response.data)  # This prints the actual response data during the test.
     assert response.status_code == 400
 
@@ -48,7 +47,7 @@ def test_valid_token(test_client: FlaskClient, app: Flask):
         # Using the private key to encode the JWT token
         jwt_token = encode_jwt_token(payload, Path("tests/test_private_keys/test2_private_key.pem"))
     # Use the generated token to test the /verify_token endpoint
-    response = test_client.get(f"/verify_token?token={jwt_token}")
+    response = test_client.get(f"/authenticate?token={jwt_token}")
 
     # Check for successful redirection
     assert response.status_code == 302
@@ -65,7 +64,7 @@ def test_blacklisted_token(test_client: FlaskClient, app: Flask):
         email = "test.email@inspection.gc.ca"
         redirect_url = "https://www.google.com/"
 
-        expiration_time = datetime.utcnow() + timedelta(minutes=2)
+        expiration_time = datetime.utcnow() + timedelta(minutes=3)
         expiration_timestamp = int(expiration_time.timestamp())
         payload = {
             "sub": email,
@@ -78,7 +77,7 @@ def test_blacklisted_token(test_client: FlaskClient, app: Flask):
         jwt_token = encode_jwt_token(payload, Path("tests/test_private_keys/test2_private_key.pem"))
 
     # Use the generated token to test the /verify_token endpoint the first time
-    response_first = test_client.get(f"/verify_token?token={jwt_token}")
+    response_first = test_client.get(f"/authenticate?token={jwt_token}")
 
     # Check for successful redirection
     assert response_first.status_code == 302
@@ -86,7 +85,8 @@ def test_blacklisted_token(test_client: FlaskClient, app: Flask):
     assert response_first.location == redirect_url
 
     # Now, try to use the same token a second time
-    response_second = test_client.get(f"/verify_token?token={jwt_token}")
+    response_second = test_client.get(f"/authenticate?token={jwt_token}")
 
     # Check that the response is an error due to the token being blacklisted
     assert response_second.status_code == 400
+    

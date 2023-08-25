@@ -7,6 +7,7 @@ from generate_jwt import generate_jwt
 
 # Loading the private key
 TEST_PRIVATE_KEY = open('tests/test_private_keys/test1_private_key.pem', 'rb').read()
+TOKEN_BLACKLIST = set()  # A basic in-memory store for simplicity;
 
 def create_request_with_json(data):
     """Create a mock request object with the given JSON data."""
@@ -53,14 +54,14 @@ def test_extract_jwt_with_valid_token():
     valid_jwt = generate_valid_jwt()
     mock_request = create_request(f"token={valid_jwt}")
     mock_session = create_mock_session({"redirect_url": "https://example.com"})
-    token = extract_jwt_token(mock_request, mock_session)
+    token = extract_jwt_token(mock_request, mock_session, TOKEN_BLACKLIST)
     assert token == valid_jwt
 
 def test_extract_jwt_with_empty_token():
     """Test extracting an empty JWT token."""
     mock_request = create_request("token=")
     mock_session = create_mock_session({"redirect_url": "https://example.com"})
-    token = extract_jwt_token(mock_request, mock_session)
+    token = extract_jwt_token(mock_request, mock_session,TOKEN_BLACKLIST)
     assert token == ""
     
 def test_extract_jwt_without_token():
@@ -68,7 +69,7 @@ def test_extract_jwt_without_token():
     mock_request = create_request("")
     mock_session = create_mock_session()  # Empty session
     try:
-        _token = extract_jwt_token(mock_request, mock_session)
+        _token = extract_jwt_token(mock_request, mock_session, TOKEN_BLACKLIST)
         assert False, "Expected JWTError but none was raised"
     except JWTError as error:
         assert str(error) == "No JWT token provided in headers and no redirect URL in session."
@@ -80,5 +81,5 @@ def test_extract_jwt_with_other_parameters():
     mock_request = create_request(f"other_param=value&token={valid_jwt}")
     mock_session = create_mock_session({"redirect_url": "https://example.com"})
 
-    token = extract_jwt_token(mock_request, mock_session)
+    token = extract_jwt_token(mock_request, mock_session, TOKEN_BLACKLIST)
     assert token == valid_jwt, f"Expected token to be {valid_jwt}, but got {token}"

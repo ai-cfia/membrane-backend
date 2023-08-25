@@ -13,8 +13,7 @@ from flask_jwt_extended import JWTManager
 from flask import Flask, request, jsonify, session, make_response, redirect, url_for
 from flask_session import Session
 from request_helpers import (extract_email_from_request, check_session_authentication,
-                             extract_jwt_token_from_args, InvalidTokenError,
-                             MissingTokenError, RequestError)
+                             InvalidTokenError, MissingTokenError, EmailError)
 from jwt_utils import (decode_jwt_token, extract_jwt_token, encode_jwt_token,
                        JWTError)
 from error_handlers import register_error_handlers
@@ -86,30 +85,41 @@ def log_request_info():
     app.logger.debug('Headers: %s', request.headers)
     app.logger.debug('Body: %s', request.get_data())
 
-@app.route('/login', methods=['POST'])
-def login():
+@app.route('/authenticate', methods=['POST', 'GET'])
+def authenticate():
     """
-    Authenticate the user based on the JWT token from the URL parameter and the email from 
-    the request body.
-    
-    1. Checks if the user is already authenticated.
-    2. Validates and decodes the provided JWT token to set the redirect URL in the session.
-    3. Verifies the email address from the request payload.
-    4. If the email is valid, creates a new access token and responds with a message.
-    
-    Returns:
-        - JSON response with an appropriate message based on the authentication status.
-        - Relevant HTTP status codes indicating the success or error of the request.
-    """
-    logging.debug("Session Data: %s", session)
+    Authenticate the user based on session data or provided JWT token.
 
+    If the user is already authenticated based on session data, a message indicating 
+    successful authentication is returned. If not, the function attempts to extract a JWT 
+    token from the request. If a valid JWT token is found, the user is authenticated, and 
+    the redirect URL from the token is stored in the session.
+
+    For POST requests, the email is extracted from the request body, and a JWT token is 
+    generated and returned. It's assumed that an email will be sent to the user with this token 
+    for verification.
+
+    For GET requests, the provided JWT token is added to a blacklist, indicating that it 
+    has been used, and the user is redirected to the stored redirect URL, marking the session 
+    as authenticated.
+
+    Raises:
+        JWTError: If there's an error decoding the JWT token.
+        MissingTokenError: If no JWT token is provided in the request.
+        InvalidTokenError: If the provided JWT token is invalid.
+        jwt_exceptions.ExpiredSignatureError: If the JWT token has expired.
+        jwt_exceptions.InvalidTokenError: If the JWT token is invalid.
+
+    Returns:
+        (jsonify, int): A tuple containing a JSON response and an HTTP status code.
+    """
     try:
         # Check if the user is already authenticated based on session data.
         if check_session_authentication(session):
             return jsonify({'message': 'User is authenticated.'}), 200
-
+        
         # Try to extract JWT token from the request.
-        jwt_token = extract_jwt_token(request, session)
+        jwt_token = extract_jwt_token(request, session, TOKEN_BLACKLIST)
 
         # If a JWT token is found, decode and validate it.
         if jwt_token:
@@ -118,73 +128,46 @@ def login():
             # Store the redirect URL from the decoded token into the session.
             session['redirect_url'] = decoded_token['redirect_url']
 
-        # Extract and validate email and redirect URL from the request and session.
-        email = extract_email_from_request(request)
-        # Create the payload with the email as the identity and the redirect URL as an additional claim.
-        print("JWT Expiry set for:", jwt_expiration_minutes, "minutes")
-        expiration_time = datetime.utcnow() + timedelta(minutes=jwt_expiration_minutes)
-        expiration_timestamp = int(expiration_time.timestamp())
-        print("expiration time: " + str(expiration_timestamp))
-        payload = {
-            "sub": email,
-            "redirect_url": session['redirect_url'],
-            "app_id": APP_ID,
-            "exp": expiration_timestamp
-        }
+        if request.method == 'POST':
+            logging.debug("Session Data: %s", session)
 
-        current_private_key_path  = PRIVATE_KEYS_DIRECTORY / f"{APP_ID}_private_key.pem"
-        jwt_token = encode_jwt_token(payload, current_private_key_path )
+            email = extract_email_from_request(request)
+            expiration_time = datetime.utcnow() + timedelta(minutes=jwt_expiration_minutes)
+            expiration_timestamp = int(expiration_time.timestamp())
+            payload = {
+                "sub": email,
+                "redirect_url": session['redirect_url'],
+                "app_id": APP_ID,
+                "exp": expiration_timestamp
+            }
 
-        # Construct the verification URL which includes the new JWT token.
-        verification_url = url_for('verify_token', token=jwt_token, _external=True)
-        print(verification_url)
-        #TODO: Send email to user containing verification url.
-        return jsonify({'message': 'Valid email address. Email sent with JWT link.'}), 200
+            current_private_key_path = PRIVATE_KEYS_DIRECTORY / f"{APP_ID}_private_key.pem"
+            jwt_token = encode_jwt_token(payload, current_private_key_path)
 
-    except (JWTError, RequestError) as error:
-        # Capture the stack trace
-        stack_trace = traceback.format_exc()
-        app.logger.error("Exception occurred: %s", stack_trace)
-        return jsonify({'error': str(error)}), 400  # Return a 400 Bad Request with the error message.
+            # Construct the verification URL which includes the new JWT token.
+            verification_url = url_for('authenticate', token=jwt_token, _external=True)
+            print(verification_url)
 
-@app.route('/verify_token', methods=['GET'])
-def verify_token():
-    """
-    Handle the verification of the JWT token received via the link.
-    Returns:
-        - If the token is valid and not expired, set the session variables
-          'authenticated' and 'user_email' and redirect the user to the dashboard.
-        - If the token is expired or invalid, return a JSON response with an error message.
-    """
-    try:
-        token = extract_jwt_token_from_args(request, TOKEN_BLACKLIST)
-        # After successful verification, add token to blacklist.
-        TOKEN_BLACKLIST.add(token)
+            # TODO: Send email to user containing verification url.
+            return jsonify({'message': 'Valid email address. Email sent with JWT link.'}), 200
 
-        # Decode token
-        decoded_token = decode_jwt_token(token, PUBLIC_KEYS_DIRECTORY)
-        email = decoded_token['sub']
-        redirect_url = decoded_token['redirect_url']
-        print(redirect_url)
+        if request.method == 'GET':
+            TOKEN_BLACKLIST.add(jwt_token)
+            session['authenticated'] = True
+            return make_response(redirect(decoded_token['redirect_url'], code=302))
 
-        # Set the 'authenticated' key in the session dictionary to indicate that the user is authenticated
-        session['authenticated'] = True
-        session['user_email'] = email
-
-        # Redirect to the extracted URL
-        response = make_response(redirect(redirect_url, code=302))
-        return response
-
-    except (JWTError, MissingTokenError, InvalidTokenError, jwt_exceptions.ExpiredSignatureError, jwt_exceptions.InvalidTokenError) as error:
-        # Print the stack trace for debugging purposes
+    except (JWTError, MissingTokenError, InvalidTokenError, jwt_exceptions.ExpiredSignatureError,
+            EmailError, jwt_exceptions.InvalidTokenError) as error:
         print(traceback.format_exc())
-        if isinstance(error, jwt_exceptions.ExpiredSignatureError):
-            error_message = "Expired JWT token."
-        elif isinstance(error, jwt_exceptions.InvalidTokenError):
-            error_message = "Invalid JWT token."
-        else:
-            error_message = str(error)
+        error_message_map = {
+            jwt_exceptions.ExpiredSignatureError: "Expired JWT token.",
+            jwt_exceptions.InvalidTokenError: "Invalid JWT token."
+        }
+        error_message = error_message_map.get(type(error), str(error))
         return jsonify({'error': error_message}), 400
+    # This is the default return statement that will be executed
+    # if neither POST nor GET conditions are met.
+    return jsonify({'error': 'Invalid request method'}), 405  # 405 is for Method Not Allowed
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -36,7 +36,7 @@ def base_url():
 @pytest.fixture
 def login_url(base_url):
     """Login URL fixture for the tests."""
-    return f'{base_url}login'
+    return f'{base_url}authenticate'
 
 @pytest.fixture
 def set_allowed_domains(monkeypatch):  # noqa
