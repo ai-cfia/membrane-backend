@@ -44,6 +44,14 @@ def set_allowed_domains(monkeypatch):  # noqa
     monkeypatch.setenv('ALLOWED_EMAIL_DOMAINS', 'gc.ca,canada.ca,inspection.gc.ca')
 
 @pytest.fixture
+def sample_jwt_token(generate_jwt_token):
+    return generate_jwt_token({
+        "data": "test_data",
+        "app_id": "test1",
+        "redirect_url": "https://www.example.com"
+    })
+
+@pytest.fixture
 def generate_jwt_token(test_private_key):
     """Fixture to generate JWT tokens for testing purposes."""
 
