@@ -29,11 +29,8 @@ def check_session_authentication(session):
     """Verify if the current session is authenticated."""
     return 'authenticated' in session and session['authenticated']
 
-def extract_email_from_request(request):
+def validate_email_from_request(email):
     """Extract and validate email and redirect_url from request and session."""
-
-    # Extract email from the request data.
-    email = request.get_json().get('email')
 
     # Ensure that an email was provided in the request.
     if not email:

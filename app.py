@@ -7,21 +7,25 @@ from pathlib import Path
 import os
 import uuid
 import traceback
+from flask_cors import CORS
 from jwt import exceptions as jwt_exceptions
 from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager
 from flask import Flask, request, jsonify, session, make_response, redirect, url_for
 from flask_session import Session
-from request_helpers import (extract_email_from_request, check_session_authentication,
+from request_helpers import (validate_email_from_request, check_session_authentication,
                              InvalidTokenError, MissingTokenError, EmailError)
-from jwt_utils import (decode_jwt_token, extract_jwt_token, encode_jwt_token,
-                       JWTError)
+from jwt_utils import (decode_jwt_token, encode_jwt_token,
+                       JWTError, JWTExpired)
 from error_handlers import register_error_handlers
 
 logging.basicConfig(level=logging.DEBUG)
 
 # Initialize Flask application
 app = Flask(__name__)
+
+# Allow CORS for your Flask app
+CORS(app, resources={r"/*": {"origins": "*", "supports_credentials": True}})
 
 # Load environment variables
 load_dotenv()
@@ -58,6 +62,8 @@ PRIVATE_KEYS_DIRECTORY = Path(keys_directory_path_private)
 APP_ID = os.getenv('APP_ID', default='') #TODO: Set default value
 private_key_path = PRIVATE_KEYS_DIRECTORY / f"{APP_ID}_private_key.pem"
 
+REDIRECT_URL = os.environ.get('REDIRECT_URL', 'http://127.0.0.1:3000/')
+
 # Check if the private key file exists for the given APP_ID
 if not private_key_path.exists():
     raise ValueError(f"No private key found for APP_ID: {APP_ID}")
@@ -91,62 +97,100 @@ def check_session():
     if check_session_authentication(session):
         return jsonify({'message': 'User is authenticated.'}), 200
 
-@app.route('/authenticate', methods=['GET'])
+@app.route('/authenticate', methods=['GET', 'POST'])
 def authenticate():
     """
     Authenticates a user based on the provided JWT token.
-
     The JWT token is extracted from the request's `token` parameter. 
     This function also checks the session to handle different stages 
     of the authentication process. If the JWT token is valid, the user 
     is authenticated.  
-    """ 
+    """
     try:
-        stage = session.get('stage', None)
+        state = session.get('state', 'JWT_Missing')
 
-        # Try to extract JWT token from the request.
-        jwt_token = extract_jwt_token(request, session, TOKEN_BLACKLIST)
+        if state == 'JWT_Missing':
+            print('STATE 1')
+            # Try to extract JWT token from the request.
+            jwt_token = request.args.get('token')
+            decoded_token = decode_jwt_token(jwt_token, PUBLIC_KEYS_DIRECTORY, TOKEN_BLACKLIST)
 
-        # If a JWT token is found, decode and validate it.
-        if jwt_token:
-            # Decode the JWT token using the public key directory.
-            decoded_token = decode_jwt_token(jwt_token, PUBLIC_KEYS_DIRECTORY)
-            # Store the redirect URL from the decoded token into the session.
-            session['redirect_url'] = decoded_token['redirect_url']
+            # If a JWT token is found, decode and validate it.
+            if decoded_token:
+                # Store the JWT into the session.
+                session['JWT'] = jwt_token
+                session['state'] = 'JWT_Authorized_Awaiting_Email'
+                # Redirect to the desired URL
+                return redirect(REDIRECT_URL)
 
-        if not stage:
+            return jsonify({'message': 'Invalid JWT Provided'}), 400
+
+        if state == 'JWT_Authorized_Awaiting_Email':
             logging.debug("Session Data: %s", session)
+            print('STATE 2')
 
-            email = extract_email_from_request(request)
-            expiration_time = datetime.utcnow() + timedelta(minutes=jwt_expiration_minutes)
-            expiration_timestamp = int(expiration_time.timestamp())
-            payload = {
-                "sub": email,
-                "redirect_url": session['redirect_url'],
-                "app_id": APP_ID,
-                "exp": expiration_timestamp
-            }
+            # Extract email from the request data.
+            email = request.get_json().get('email')
 
-            current_private_key_path = PRIVATE_KEYS_DIRECTORY / f"{APP_ID}_private_key.pem"
-            jwt_token = encode_jwt_token(payload, current_private_key_path)
+            # Decode the JWT token using the public key directory.
+            decoded_token = decode_jwt_token(session['JWT'], PUBLIC_KEYS_DIRECTORY, TOKEN_BLACKLIST)
 
-            # Construct the verification URL which includes the new JWT token.
-            verification_url = url_for('authenticate', token=jwt_token, _external=True)
-            print(verification_url)
+            if decoded_token:
+                
+                email = validate_email_from_request(email)
+                expiration_time = datetime.utcnow() + timedelta(minutes=jwt_expiration_minutes)
+                expiration_timestamp = int(expiration_time.timestamp())
 
-            # TODO: Send email to user containing verification url.
-            session['stage'] = 'email_sent'
-            return jsonify({'message': 'Valid email address. Email sent with JWT link.'}), 200
+                payload = {
+                    "sub": email,
+                    "redirect_url": decoded_token['redirect_url'],
+                    "app_id": APP_ID,
+                    "exp": expiration_timestamp
+                }
 
-        if stage == 'email_sent':
-            TOKEN_BLACKLIST.add(jwt_token)
-            session['authenticated'] = True
-            session.pop('stage', None)  # Clear the stage session variable
-            return make_response(redirect(decoded_token['redirect_url'], code=302))
+                current_private_key_path = PRIVATE_KEYS_DIRECTORY / f"{APP_ID}_private_key.pem"
+                jwt_token = encode_jwt_token(payload, current_private_key_path)
 
-    except (JWTError, MissingTokenError, InvalidTokenError, jwt_exceptions.ExpiredSignatureError,
+                # Construct the verification URL which includes the new JWT token.
+                verification_url = url_for('authenticate', token=jwt_token, _external=True)
+                print(verification_url)
+
+                # TODO: Send email to user containing verification url.
+                session['state'] = 'Email_Sent'
+                return jsonify({'message': 'Valid email address. Email sent with JWT link.'}), 200
+
+        if state == 'Email_Sent':
+            # Try to extract JWT token from the request.
+            jwt_token = request.args.get('token')
+            decoded_token = decode_jwt_token(jwt_token, PUBLIC_KEYS_DIRECTORY, TOKEN_BLACKLIST)
+            print('STATE 3')
+
+            # If a JWT token is found, decode and validate it.
+            if decoded_token:
+                # Decode the JWT token using the public key directory.
+                TOKEN_BLACKLIST.add(jwt_token)
+                session['authenticated'] = True
+                session['state'] = 'User_Authenticated'
+                jwt_token_redirect = f"{decoded_token['redirect_url']}?token={jwt_token}"
+                return make_response(redirect(jwt_token_redirect, code=302))
+
+        if state == 'User_Authenticated':
+            if check_session_authentication(session):
+                return jsonify({'message': 'User is authenticated.'}), 200
+
+            session['state'] = 'JWT_Missing'
+            return jsonify({'message': 'Session has expired, user is not authenticated.'}), 200
+
+    except (JWTError, JWTExpired, MissingTokenError, InvalidTokenError, jwt_exceptions.ExpiredSignatureError,
             EmailError, jwt_exceptions.InvalidTokenError) as error:
         logging.error(traceback.format_exc())
+        print('STATE 4')
+
+        # Handle the JWT expiration error specifically
+        if isinstance(error, JWTExpired) and str(error) == "JWT token has expired.":
+            session['state'] = 'JWT_Missing'
+            return jsonify({'message': 'JWT token has expired, new authentication required.'}), 401
+
         error_message_map = {
             jwt_exceptions.ExpiredSignatureError: "Expired JWT token.",
             jwt_exceptions.InvalidTokenError: "Invalid JWT token."

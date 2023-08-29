@@ -15,18 +15,17 @@ class JWTPrivateKeyNotFoundError(JWTError):
     """Raised when the private key is not found."""
 class InvalidTokenError(JWTError):
     """Raised when the provided token is invalid."""
+class JWTExpired(JWTError):
+    """Raised when the provided token is expired."""
 
-def extract_jwt_token(request, session, token_blacklist):
+def extract_jwt_token(jwt_token, token_blacklist):
     """
     Extract JWT token from the provided request object.
     """
-    jwt_token = request.args.get('token')
-    redirect_url = session.get('redirect_url')
+    if not jwt_token:
+        raise JWTError("No JWT token provided in query parameters.")
 
-    if not jwt_token and not redirect_url:
-        raise JWTError("No JWT token provided in headers and no redirect URL in session.")
-    
-        # Check if token is in the blacklist.
+    # Check if token is in the blacklist.
     if jwt_token in token_blacklist:
         raise InvalidTokenError("This token has already been used.")
 
@@ -45,10 +44,17 @@ def encode_jwt_token(payload, private_key_path: Path):
     jwt_token = encode(payload, private_key, algorithm='RS256')
     return jwt_token
 
-def decode_jwt_token(jwt_token, keys_directory: Path):
+def decode_jwt_token(jwt_token, keys_directory: Path, token_blacklist):
     """
     Decode the JWT token using the correct public key based on app_id.
     """
+    if not jwt_token:
+        raise JWTError("No JWT token provided in query parameters.")
+
+    # Check if token is in the blacklist.
+    if jwt_token in token_blacklist:
+        raise InvalidTokenError("This token has already been used.")
+
      # Temporarily decode the token to fetch the app_id
     unverified_decoded_token = decode(jwt_token, options={"verify_signature": False})
     if 'app_id' not in unverified_decoded_token:
@@ -71,7 +77,7 @@ def decode_jwt_token(jwt_token, keys_directory: Path):
         # Retrieve the redirect URL stored in the session.
         redirect_url = decoded_token['redirect_url']
         if not redirect_url:
-            raise JWTError("No redirect URL found in session.")
+            raise JWTError("No redirect URL found in Token.")
         
         expired_time = decoded_token['exp']
 
@@ -81,7 +87,7 @@ def decode_jwt_token(jwt_token, keys_directory: Path):
         
         # Check for token expiration
         if current_timestamp > expired_time:
-            raise JWTError("JWT token has expired.")
+            raise JWTExpired("JWT token has expired.")
         
         return decoded_token
 
