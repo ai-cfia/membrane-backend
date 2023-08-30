@@ -50,32 +50,20 @@ app.config['SESSION_COOKIE_SECURE'] = True
 # Initialize JWT Manager with the app
 jwt = JWTManager(app)
 
-# Configuration for public keys
-keys_directory_path_public = os.getenv('PUBLIC_KEYS_DIRECTORY', default='keys/public_keys')
-PUBLIC_KEYS_DIRECTORY = Path(keys_directory_path_public)
+# Configuration for client public keys
 
-# Configuration for private keys
-keys_directory_path_private = os.getenv('PRIVATE_KEYS_DIRECTORY', default='keys/private_keys')
-PRIVATE_KEYS_DIRECTORY = Path(keys_directory_path_private)
-
-# Retrieve the application ID from environment variables; default to '' if not set
-APP_ID = os.getenv('APP_ID', default='') #TODO: Set default value
-private_key_path = PRIVATE_KEYS_DIRECTORY / f"{APP_ID}_private_key.pem"
-
-REDIRECT_URL = os.environ.get('REDIRECT_URL', 'http://127.0.0.1:3000/')
-
-# Check if the private key file exists for the given APP_ID
-if not private_key_path.exists():
-    raise ValueError(f"No private key found for APP_ID: {APP_ID}")
+CLIENT_PUBLIC_KEYS_DIRECTORY = Path(os.getenv('CLIENT_PUBLIC_KEYS_DIRECTORY', default='keys/public_keys'))
+# Retrieve server private/public key paths from environment variables; default to '' if not set
+SERVER_PRIVATE_KEYS_DIRECTORY = Path(os.getenv('SERVER_PRIVATE_KEYS_DIRECTORY', default=''))  # TODO: Set default
+SERVER_PUBLIC_KEYS_DIRECTORY = Path(os.getenv('SERVER_PUBLIC_KEYS_DIRECTORY', default=''))    # TODO: Set default
+# Retrieve server private key name from environment variable; default to '' if not set
+SERVER_PRIVATE_KEY = os.getenv('SERVER_PRIVATE_KEY', default='') #TODO: Set default value
+# Retrieve redirect URL to Louis Frontend
+REDIRECT_URL_TO_LOUIS_FRONTEND = os.environ.get('REDIRECT_URL_TO_LOUIS_FRONTEND', '') #TODO: Set default value
 
 # Check if the directories exist
-if not PUBLIC_KEYS_DIRECTORY.exists():
-    raise ValueError(f"The directory {PUBLIC_KEYS_DIRECTORY} for public keys does not exist. Please specify a valid directory.")
-
-if not PRIVATE_KEYS_DIRECTORY.exists():
-    raise ValueError(f"The directory {PRIVATE_KEYS_DIRECTORY} for private keys does not exist. Please specify a valid directory.")
-
-
+if not Path(CLIENT_PUBLIC_KEYS_DIRECTORY).exists():
+    raise ValueError(f"The directory {CLIENT_PUBLIC_KEYS_DIRECTORY} for public keys does not exist. Please specify a valid directory.")
 TOKEN_BLACKLIST = set()  # A basic in-memory store for simplicity;
 
 # Configure Flask-Session
@@ -107,33 +95,33 @@ def authenticate():
     is authenticated.  
     """
     try:
-        state = session.get('state', 'JWT_Missing')
+        state = session.get('state', 'INITIAL_STATE')
 
-        if state == 'JWT_Missing':
+        if state == 'INITIAL_STATE':
             print('STATE 1')
             # Try to extract JWT token from the request.
-            jwt_token = request.args.get('token')
-            decoded_token = decode_jwt_token(jwt_token, PUBLIC_KEYS_DIRECTORY, TOKEN_BLACKLIST)
+            clientapp_token = request.args.get('token')
+            clientapp_decoded_token = decode_jwt_token(clientapp_token, CLIENT_PUBLIC_KEYS_DIRECTORY, TOKEN_BLACKLIST)
 
             # If a JWT token is found, decode and validate it.
-            if decoded_token:
+            if clientapp_decoded_token:
                 # Store the JWT into the session.
-                session['JWT'] = jwt_token
-                session['state'] = 'JWT_Authorized_Awaiting_Email'
+                session['JWT'] = clientapp_token
+                session['state'] = 'Awaiting_Email'
                 # Redirect to the desired URL
-                return redirect(REDIRECT_URL)
+                return redirect(REDIRECT_URL_TO_LOUIS_FRONTEND)
 
             return jsonify({'message': 'Invalid JWT Provided'}), 400
 
-        if state == 'JWT_Authorized_Awaiting_Email':
+        if state == 'Awaiting_Email':
             logging.debug("Session Data: %s", session)
             print('STATE 2')
 
             # Extract email from the request data.
             email = request.get_json().get('email')
-
+            
             # Decode the JWT token using the public key directory.
-            decoded_token = decode_jwt_token(session['JWT'], PUBLIC_KEYS_DIRECTORY, TOKEN_BLACKLIST)
+            decoded_token = decode_jwt_token(session['JWT'], CLIENT_PUBLIC_KEYS_DIRECTORY, TOKEN_BLACKLIST)
 
             if decoded_token:
                 
@@ -144,12 +132,12 @@ def authenticate():
                 payload = {
                     "sub": email,
                     "redirect_url": decoded_token['redirect_url'],
-                    "app_id": APP_ID,
+                    "app_id": SERVER_PRIVATE_KEY,
                     "exp": expiration_timestamp
                 }
 
-                current_private_key_path = PRIVATE_KEYS_DIRECTORY / f"{APP_ID}_private_key.pem"
-                jwt_token = encode_jwt_token(payload, current_private_key_path)
+                current_server_private_key_path = SERVER_PRIVATE_KEYS_DIRECTORY / f"{SERVER_PRIVATE_KEY}_private_key.pem"
+                jwt_token = encode_jwt_token(payload, current_server_private_key_path)
 
                 # Construct the verification URL which includes the new JWT token.
                 verification_url = url_for('authenticate', token=jwt_token, _external=True)
@@ -161,24 +149,24 @@ def authenticate():
 
         if state == 'Email_Sent':
             # Try to extract JWT token from the request.
-            jwt_token = request.args.get('token')
-            decoded_token = decode_jwt_token(jwt_token, PUBLIC_KEYS_DIRECTORY, TOKEN_BLACKLIST)
+            email_token = request.args.get('token')
+            decoded_token = decode_jwt_token(email_token, SERVER_PUBLIC_KEYS_DIRECTORY, TOKEN_BLACKLIST)
             print('STATE 3')
 
-            # If a JWT token is found, decode and validate it.
+            # If a email token is found, decode and validate it.
             if decoded_token:
-                # Decode the JWT token using the public key directory.
-                TOKEN_BLACKLIST.add(jwt_token)
+                # Decode the email token using the public key directory.
+                TOKEN_BLACKLIST.add(email_token)
                 session['authenticated'] = True
-                session['state'] = 'User_Authenticated'
-                jwt_token_redirect = f"{decoded_token['redirect_url']}?token={jwt_token}"
-                return make_response(redirect(jwt_token_redirect, code=302))
+                session['state'] = 'USER_AUTHENTICATED'
+                email_token_redirect = f"{decoded_token['redirect_url']}?token={email_token}"
+                return make_response(redirect(email_token_redirect, code=302))
 
-        if state == 'User_Authenticated':
+        if state == 'USER_AUTHENTICATED':
             if check_session_authentication(session):
                 return jsonify({'message': 'User is authenticated.'}), 200
 
-            session['state'] = 'JWT_Missing'
+            session['state'] = 'INITIAL_STATE'
             return jsonify({'message': 'Session has expired, user is not authenticated.'}), 200
 
     except (JWTError, JWTExpired, MissingTokenError, InvalidTokenError, jwt_exceptions.ExpiredSignatureError,
@@ -188,7 +176,7 @@ def authenticate():
 
         # Handle the JWT expiration error specifically
         if isinstance(error, JWTExpired) and str(error) == "JWT token has expired.":
-            session['state'] = 'JWT_Missing'
+            session['state'] = 'INITIAL_STATE'
             return jsonify({'message': 'JWT token has expired, new authentication required.'}), 401
 
         error_message_map = {

@@ -11,7 +11,7 @@ from app import app as flask_app
 @pytest.fixture(scope='session')
 def test_private_key():
     """Fixture to read and provide the private key."""
-    with open('tests/test_private_keys/test1_private_key.pem', 'rb') as f:
+    with open('tests/client_private_keys/testapp1_private_key.pem', 'rb') as f:
         return f.read()
 
 @pytest.fixture
@@ -47,7 +47,7 @@ def set_allowed_domains(monkeypatch):  # noqa
 def sample_jwt_token(generate_jwt_token):
     return generate_jwt_token({
         "data": "test_data",
-        "app_id": "test1",
+        "app_id": "testapp1",
         "redirect_url": "https://www.example.com"
     })
 

@@ -8,7 +8,7 @@ from jwt.exceptions import DecodeError
 from jwt_utils import decode_jwt_token, JWTPublicKeyNotFoundError, JWTError
 
 # Sample public and private keys for test purposes
-with open('tests/test_private_keys/test1_private_key.pem', 'rb') as f:
+with open('tests/client_private_keys/testapp1_private_key.pem', 'rb') as f:
     PRIVATE_KEY = f.read()
 
 with open('tests/test_public_keys/test1_public_key.pem', 'rb') as f:
