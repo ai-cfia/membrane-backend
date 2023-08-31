@@ -1,4 +1,6 @@
 import os
+import uuid
+from datetime import timedelta
 from flask import Flask, redirect, request, session, url_for
 import jwt
 from generate_jwt import generate_jwt
@@ -6,7 +8,11 @@ from generate_jwt import generate_jwt
 app = Flask(__name__)
 
 # Generate a secret key for the session cookie
-app.secret_key = os.urandom(24)
+SECRET_KEY = os.getenv('SECRET_KEY', str(uuid.uuid4()))
+app.secret_key = SECRET_KEY
+
+session_lifetime_minutes = int(os.environ.get('SESSION_LIFETIME_MINUTES', 30))
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=session_lifetime_minutes)
 
 def decode_jwt_token(jwt_token, public_key):
     """
@@ -18,7 +24,7 @@ def decode_jwt_token(jwt_token, public_key):
     except Exception as error:
         print(f"Error decoding JWT: {error}")
         return None
-    
+
 @app.route('/')
 def hello_world():
     # Check if there's a session cookie
@@ -50,6 +56,7 @@ def hello_world():
     if decoded_token:
         # If the JWT token is valid, generate a session cookie
         print("JWT token VALID")
+        session.permanent = True
         session['authenticated'] = True
         return redirect(url_for("hello_world"))
 
