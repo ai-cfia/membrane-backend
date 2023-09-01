@@ -11,12 +11,12 @@ from flask_cors import CORS
 from jwt import exceptions as jwt_exceptions
 from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager
-from flask import Flask, request, jsonify, session, make_response, redirect, url_for
+from flask import Flask, request, jsonify, session, url_for
 from flask_session import Session
 from request_helpers import (validate_email_from_request, check_session_authentication,
                              InvalidTokenError, MissingTokenError, EmailError)
-from jwt_utils import (decode_jwt_token, encode_email_token, decode_email_token,
-                       JWTError, JWTExpired)
+from jwt_utils import (decode_jwt_token, encode_email_token, verificate_token_decode_and_redirect, login_redirect_with_client_jwt,
+                       redirect_to_client_app_using_email_token, JWTError, JWTExpired)
 from environment_validation import validate_environment_settings
 from error_handlers import register_error_handlers
 
@@ -60,8 +60,8 @@ REDIRECT_URL_TO_LOUIS_FRONTEND = os.getenv('REDIRECT_URL_TO_LOUIS_FRONTEND', '')
 # Validate the environment settings
 validate_environment_settings(
     CLIENT_PUBLIC_KEYS_DIRECTORY,
-    SERVER_PRIVATE_KEY, 
-    SERVER_PUBLIC_KEY, 
+    SERVER_PRIVATE_KEY,
+    SERVER_PUBLIC_KEY,
     REDIRECT_URL_TO_LOUIS_FRONTEND
 )
 
@@ -81,54 +81,46 @@ def log_request_info():
     app.logger.debug('Headers: %s', request.headers)
     app.logger.debug('Body: %s', request.get_data())
 
-@app.route('/authenticate', methods=['GET', 'POST'])
-def authenticate():
+def handle_initial_state(clientapp_token):
+    """Handles the logic for when the state is INITIAL_STATE."""
     try:
-        state = session.get('state', 'INITIAL_STATE')
+        # Try to extract and decode JWT token from the request query URL.
+        session['state'] = 'AWAITING_EMAIL'
+        print('CURRENT STATE: AWAITING_EMAIL')
+        response = login_redirect_with_client_jwt(clientapp_token, CLIENT_PUBLIC_KEYS_DIRECTORY, REDIRECT_URL_TO_LOUIS_FRONTEND)
+        return response
+    except Exception:
+        logging.exception("Failed during login redirect with client jwt")
 
-        if state == 'INITIAL_STATE':
-            print('STATE 1')
+    # Try to decode verification email token if its being passed in the request URL.
+    # In case user has clicked on the verification URL and is already.
+    try:
+        return redirect_to_client_app_using_email_token(clientapp_token, SERVER_PUBLIC_KEY, TOKEN_BLACKLIST)
+    except Exception as error:
+        print("Something went wrong. Type of error:", type(error))
+        # TODO: Redirect to Louis main site because tokens are all expired
 
-            # Try to extract and decode JWT token from the request.
-            clientapp_token = request.args.get('token')
-            clientapp_decoded_token = decode_jwt_token(clientapp_token, CLIENT_PUBLIC_KEYS_DIRECTORY)
+    return jsonify({'message': 'Invalid JWT Provided'}), 400
 
-            # If a valid JWT token is found, update the session and prepare a redirect response.
-            if clientapp_decoded_token:
-                session['state'] = 'AWAITING_EMAIL'
-                redirect_url_with_token = f"{REDIRECT_URL_TO_LOUIS_FRONTEND}?token={clientapp_token}"
-                response = redirect(redirect_url_with_token)
-            else:
-                response = jsonify({'message': 'Invalid JWT Provided'}), 400
+def handle_awaiting_email_state(clientapp_token):
+    """Handles the logic for when the state is AWAITING_EMAIL."""
+    try:
+        clientapp_decoded_token = decode_jwt_token(clientapp_token, CLIENT_PUBLIC_KEYS_DIRECTORY)
 
-            return response
-
-        if state == 'AWAITING_EMAIL':
-            print('STATE 2')
-
-            # Retrieve and decode URL query token from client app
-            clientapp_token = request.args.get('token')
-            clientapp_decoded_token = decode_jwt_token(clientapp_token, CLIENT_PUBLIC_KEYS_DIRECTORY)
-
-            if not clientapp_decoded_token:
-                raise JWTError('Invalid JWT in session.')
-
-            if request.is_json:
-                # Extract the email from the request data and validate it.
-                email = validate_email_from_request(request.get_json().get('email'))
-            else:
-                redirect_url_with_invalid_email = f"{REDIRECT_URL_TO_LOUIS_FRONTEND}?token={clientapp_token}"
-                return redirect(redirect_url_with_invalid_email)
-
+        if request.is_json:
+            email = validate_email_from_request(request.get_json().get('email'))
+            # Generate token expiration timestamp.
             expiration_time = datetime.utcnow() + timedelta(minutes=jwt_expiration_minutes)
             expiration_timestamp = int(expiration_time.timestamp())
 
+            # Token payload.
             payload = {
                 "sub": email,
                 "redirect_url": clientapp_decoded_token['redirect_url'],
                 "exp": expiration_timestamp
             }
 
+            # Encode email token using the servers dedicated private key.
             email_token = encode_email_token(payload, SERVER_PRIVATE_KEY)
 
             # Construct the verification URL which includes the new JWT token.
@@ -137,37 +129,63 @@ def authenticate():
 
             # TODO: Send email to user containing verification url.
             session['state'] = 'EMAIL_SENT'
+            print('CURRENT STATE: EMAIL_SENT')
+
             return jsonify({'message': 'Valid email address. Email sent with JWT link.'}), 200
 
+        return login_redirect_with_client_jwt(clientapp_token, CLIENT_PUBLIC_KEYS_DIRECTORY, REDIRECT_URL_TO_LOUIS_FRONTEND)
+
+    except Exception:
+        try:
+            return redirect_to_client_app_using_email_token(clientapp_token, SERVER_PUBLIC_KEY, TOKEN_BLACKLIST)
+        except Exception as error:
+            print("Something went wrong. Type of error:", type(error))
+            # TODO: Redirect to Louis main site because tokens are all expired
+
+    return jsonify({'message': 'Invalid JWT Provided'}), 400
+
+def handle_email_sent_state(email_token):
+    """Handles the logic for when the state is EMAIL_SENT."""
+    try:
+        return verificate_token_decode_and_redirect(email_token, SERVER_PUBLIC_KEY, TOKEN_BLACKLIST)
+    except Exception as error:
+        print("Failed during decoding or initial operations. Type of error:", type(error))
+
+    # If the decoding process fails, try to redirect using the client jwt
+    try:
+        not_valid_email_token = email_token
+        return login_redirect_with_client_jwt(not_valid_email_token, CLIENT_PUBLIC_KEYS_DIRECTORY, REDIRECT_URL_TO_LOUIS_FRONTEND)
+    except Exception as error2:
+        print("Failed during redirect with client jwt. Type of error:", type(error2))
+
+    return jsonify({'message': 'Invalid JWT Provided'}), 400
+
+@app.route('/authenticate', methods=['GET', 'POST'])
+def authenticate():
+    try:
+        state = session.get('state', 'INITIAL_STATE')
+
+        if state == 'INITIAL_STATE':
+            print('CURRENT STATE: INITIAL_STATE')
+            # Extract client app token from request URL query.
+            clientapp_token = request.args.get('token')
+            response = handle_initial_state(clientapp_token)
+            return response
+
+        if state == 'AWAITING_EMAIL':
+            # Extract client app token from request URL query.
+            clientapp_token = request.args.get('token')
+            response = handle_awaiting_email_state(clientapp_token)
+            return response
+
         if state == 'EMAIL_SENT':
-            # Debugging purposes;
-            print('STATE 3')
-
             # Extract the JWT token from the request.
-            email_token = request.args.get('token')     
-            try:
-                decoded_email_token = decode_email_token(email_token, SERVER_PUBLIC_KEY, TOKEN_BLACKLIST)
-
-            except Exception as error:
-                # Catch other exceptions for debugging
-                print("Type of error:", type(error))
-                print("Unexpected error in decode_email_token:", str(error))
-                session['state'] = 'AWAITING_EMAIL'
-                redirect_url_with_invalid_email = f"{REDIRECT_URL_TO_LOUIS_FRONTEND}?token={email_token}"
-                return redirect(redirect_url_with_invalid_email)
-
-            # If a valid email token is decoded, proceed to validate and use it.
-            TOKEN_BLACKLIST.add(email_token)
-            session['authenticated'] = True
-            session['state'] = 'USER_AUTHENTICATED'
-            email_token_redirect = f"{decoded_email_token['redirect_url']}?token={email_token}"
-            response = make_response(redirect(email_token_redirect, code=302))
-
+            email_token = request.args.get('token')
+            response = handle_email_sent_state(email_token)
             return response
 
         if state == 'USER_AUTHENTICATED':
-            print('STATE 4')
-
+            print('USER_AUTHENTICATED')
             if check_session_authentication(session):
                 return jsonify({'message': 'User is authenticated.'}), 200
 
@@ -177,19 +195,6 @@ def authenticate():
     except (JWTError, JWTExpired, MissingTokenError, InvalidTokenError, jwt_exceptions.ExpiredSignatureError,
             EmailError, jwt_exceptions.InvalidTokenError) as error:
         logging.error(traceback.format_exc())
-
-        # Handle the JWT expiration error specifically
-        if isinstance(error, JWTExpired) and str(error) == "JWT token has expired.":
-            print("JWT EXPIRED")
-            session['state'] = 'INITIAL_STATE'
-            return jsonify({'message': 'JWT token has expired, new authentication required.'}), 401
-
-        # Handle specific case for InvalidTokenError during EMAIL_SENT state
-        if isinstance(error, InvalidTokenError) and session.get('state') == 'EMAIL_SENT':
-            print("INVALID TOKEN")
-            session['state'] = 'AWAITING_EMAIL'
-            redirect_url_with_invalid_email = f"{REDIRECT_URL_TO_LOUIS_FRONTEND}?token={email_token}"
-            return redirect(redirect_url_with_invalid_email)
 
         error_message_map = {
             jwt_exceptions.ExpiredSignatureError: "Expired JWT token.",
