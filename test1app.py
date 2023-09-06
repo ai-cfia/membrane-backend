@@ -29,8 +29,8 @@ def decode_jwt_token(jwt_token, public_key):
 def hello_world():
     # Check if there's a session cookie
     if 'authenticated' in session and session['authenticated']:
-        print("Stage FINAL SHOW HOME PAGE")
-        return 'Hello World!'
+        email = session['decoded_token']['sub']  # Get the email from the decoded token
+        return f'Hello, {email}!'
 
     # Check if there's a JWT token in the request from another backend
     jwt_token = request.args.get('token')
@@ -58,6 +58,7 @@ def hello_world():
         print("JWT token VALID")
         session.permanent = True
         session['authenticated'] = True
+        session['decoded_token'] = decoded_token  # Store the decoded token in the session
         return redirect(url_for("hello_world"))
 
     return 'Invalid Token!'

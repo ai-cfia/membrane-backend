@@ -28,31 +28,54 @@ class JWTExpired(JWTError):
 
 def extract_jwt_token(jwt_token, token_blacklist):
     """
-    Extract JWT token from the provided request object.
+    Extracts and validates the provided JWT token against a blacklist.
+
+    Args:
+        jwt_token (str): The JWT token to extract.
+        token_blacklist (set): A set containing blacklisted tokens.
+
+    Returns:
+        str: Validated JWT token.
+
+    Raises:
+        JWTError: If the token is invalid or blacklisted.
     """
     if not jwt_token:
-        raise JWTError("No JWT token provided in query parameters.")
+        raise JWTError("No JWT token provided.")
 
-    # Check if token is in the blacklist.
     if jwt_token in token_blacklist:
-        raise BlacklistedTokenError("This token has already been used.")
+        raise BlacklistedTokenError("The provided token is blacklisted.")
 
     return jwt_token
 
-def encode_email_token(payload, server_private_key_path: Path):
+def encode_email_verification_token(payload, server_private_key_path):
     """
-    Encode the payload using the private key for RS256 algorithm.
+    Encodes the given payload into a JWT using the RS256 algorithm.
+
+    Args:
+        payload (dict): The payload to encode.
+        server_private_key_path (Path): Path to the server's private key.
+
+    Returns:
+        str: Encoded JWT token.
+
+    Raises:
+        JWTPrivateKeyNotFoundError: If the private key file doesn't exist.
+        JWTError: For other JWT-related issues.
     """
     if not server_private_key_path.exists():
-        raise JWTPrivateKeyNotFoundError(f'Private key not found at: {server_private_key_path}.')
+        raise JWTPrivateKeyNotFoundError("Private key not found")
 
     with server_private_key_path.open('r') as key_file:
         private_key = key_file.read()
 
-    jwt_token = encode(payload, private_key, algorithm='RS256')
-    return jwt_token
+    try:
+        jwt_token = encode(payload, private_key, algorithm='RS256')
+        return jwt_token
+    except Exception as error:
+        raise JWTError(f"Failed to encode JWT token. Error: {error}") from error
 
-def decode_jwt_token(jwt_token, keys_directory: Path):
+def decode_client_jwt_token(jwt_token, keys_directory: Path):
     """
     Decode the JWT token using the correct public key based on app_id.
     """
@@ -98,82 +121,147 @@ def decode_jwt_token(jwt_token, keys_directory: Path):
     except (jwt_exceptions.InvalidTokenError, jwt_exceptions.DecodeError) as error:
         raise JWTError(str(error)) from error
 
-def decode_email_token(jwt_token, server_public_key: Path, token_blacklist):
+def decode_email_verification_token(jwt_token, server_public_key_path, token_blacklist):
     """
-    Decode the JWT token using the correct public key based on app_id.
+    Decodes and validates an email verification JWT token.
+
+    Args:
+        jwt_token (str): The JWT token to decode.
+        server_public_key_path (Path): Path to the server's public key for token decoding.
+        token_blacklist (set): A set of blacklisted tokens.
+
+    Returns:
+        dict: Decoded JWT payload.
+
+    Raises:
+        JWTError: For various JWT-related issues.
     """
     if not jwt_token:
         raise JWTError("No JWT token provided in query parameters.")
 
-    # Check if token is in the blacklist.
+    # Check blacklist.
     if jwt_token in token_blacklist:
-        raise BlacklistedTokenError("This token has already been used.")
+        raise BlacklistedTokenError("This token has been blacklisted.")
 
-    with server_public_key.open('r') as key_file:
+    # Fetch public key.
+    with server_public_key_path.open('r') as key_file:
         public_key = key_file.read()
 
     try:
-        # Decode the token using the fetched public key
+        # Decode the token using the provided public key.
         decoded_token = decode(jwt_token, public_key, algorithms=['RS256'])
-        # Retrieve the redirect URL stored in the session.
-        redirect_url = decoded_token['redirect_url']
-        if not redirect_url:
-            raise JWTError("No redirect URL found in Token.")
 
+        # Check redirect URL existence.
+        if 'redirect_url' not in decoded_token:
+            raise JWTError("No redirect URL found in token.")
+
+        # Check token expiration.
         expired_time = decoded_token['exp']
-
-        # Get current time
         current_time = datetime.utcnow()
-        current_timestamp = int(current_time.timestamp())  # Convert datetime to timestamp
-
-        # Check for token expiration
-        if current_timestamp > expired_time:
+        if current_time.timestamp() > expired_time:
             raise JWTExpired("JWT token has expired.")
 
         return decoded_token
 
-    except (jwt_exceptions.InvalidTokenError, jwt_exceptions.DecodeError, jwt_exceptions.InvalidSignatureError) as error:
+    except jwt_exceptions.InvalidTokenError as error:
         raise InvalidTokenError(str(error)) from error
 
+
 def login_redirect_with_client_jwt(clientapp_token, client_public_keys_directory, redirect_url_to_louis_frontend):
-    """Decodes the client application token and redirects to Louis Login Frontend."""
+    """
+    Validates the client application token and redirects to the Louis Login Frontend.
+    
+    Args:
+        clientapp_token (str): The JWT token provided by the client application.
+        client_public_keys_directory (Path): Path to the directory containing client public keys.
+        redirect_url_to_louis_frontend (str): The URL for redirecting to the Louis Login Frontend.
+        
+    Returns:
+        Response: A redirection response to the Louis Login Frontend with the token as a parameter.
+        
+    Raises:
+        InvalidClientTokenError: If the token validation or decoding fails.
+    """
     try:
-        decode_jwt_token(clientapp_token, client_public_keys_directory)
+        decode_client_jwt_token(clientapp_token, client_public_keys_directory)
+        redirect_url_with_token = f"{redirect_url_to_louis_frontend}?token={clientapp_token}"
+        return redirect(redirect_url_with_token)
     except Exception as error:
-        # Optionally log the exception or take another appropriate action.
+        logging.error("Failed to decode client application token: %s", error)
         raise InvalidClientTokenError("Failed to decode client application token.") from error
 
-    redirect_url_with_token = f"{redirect_url_to_louis_frontend}?token={clientapp_token}"
 
-    return redirect(redirect_url_with_token)
-
-def redirect_to_client_app_using_email_token(clientapp_token, server_public_key, token_blacklist):
-    """Attempts to decode the client application's email token and redirects to the appropriate endpoint."""
+def redirect_to_client_app_using_verification_token(clientapp_token, server_public_key, token_blacklist):
+    """
+    Decodes the email verification token and redirects to the appropriate endpoint.
+    
+    Args:
+        clientapp_token (str): The JWT token from the client application.
+        server_public_key (Path): Path to the public key used for JWT decoding.
+        token_blacklist (set): A set to store tokens that should not be reused.
+        
+    Returns:
+        Response: A redirection response based on the decoded token's information.
+        
+    Raises:
+        InvalidEmailTokenError: If there's an issue with the token's validation or decoding.
+    """
     try:
-        clientapp_decoded_email_token = decode_email_token(clientapp_token, server_public_key, token_blacklist)
+        # Attempt to decode the client application's email token
+        clientapp_decoded_email_token = decode_email_verification_token(clientapp_token, server_public_key, token_blacklist)
         session['state'] = 'EMAIL_SENT'
         redirect_url_with_token = f"{url_for('authenticate')}?token={clientapp_token}"
         return redirect(redirect_url_with_token)
     except BlacklistedTokenError:
-        # Log the error and proceed to try without the blacklist
         logging.exception("Token is blacklisted, trying without blacklist...")
-    except InvalidTokenError as error:
-        # Log the error and raise as we can't proceed further
-        print("Something went wrong. Type of error:", type(error))
+    except InvalidTokenError:
+        logging.error("Invalid token provided.")
         raise
-    
-    # Handle the token without using the blacklist
+
+    # If blacklisted or any other error, handle the token without using the blacklist.
+    # This is return user to client application to restart SSO.
     try:
-        clientapp_decoded_email_token = decode_email_token(clientapp_token, server_public_key, {})
-        logging.debug("Redirecting to Client app for SSO restart")
-        return redirect(f"{clientapp_decoded_email_token['redirect_url']}")
+        clientapp_decoded_email_token = decode_email_verification_token(clientapp_token, server_public_key, {})
+        return redirect(clientapp_decoded_email_token['redirect_url'])
     except (InvalidTokenError, BlacklistedTokenError) as error:
         raise InvalidEmailTokenError("Failed to decode client application token.") from error
 
-def verificate_token_decode_and_redirect(email_token, server_public_key, token_blacklist):
-    decoded_email_token = decode_email_token(email_token, server_public_key, token_blacklist)
-    token_blacklist.add(email_token)
-    session['authenticated'] = True
-    session['state'] = 'USER_AUTHENTICATED'
-    email_token_redirect = f"{decoded_email_token['redirect_url']}?token={email_token}"
-    return redirect(email_token_redirect, code=302)
+def process_email_verification_token(email_token, server_public_key, token_blacklist):
+    """
+    Processes a token from an email verification URL.
+
+    The function decodes the given email token, validates its authenticity, and adds it to a 
+    blacklist to prevent reuse. Upon successful validation, the user's session is updated 
+    to an authenticated state, and a redirection is performed based on the decoded token's 
+    information.
+
+    Args:
+        email_token (str): The JWT token from the email verification URL.
+        server_public_key (Path): Path to the public key used for JWT decoding.
+        token_blacklist (set): A set to store tokens that should not be reused.
+
+    Returns:
+        Response: A redirection response based on the decoded token's information.
+
+    Raises:
+        JWTError: If there's an issue with the token's validation or decoding.
+    """
+    try:
+        # Decode the email token
+        decoded_email_token = decode_email_verification_token(email_token, server_public_key, token_blacklist)
+
+        # Add the token to the blacklist to ensure it's not reused
+        token_blacklist.add(email_token)
+
+        # Update the session to reflect the user's authenticated state
+        session['authenticated'] = True
+        session['state'] = 'USER_AUTHENTICATED'
+
+        # Construct the redirect URL using the decoded information and redirect
+        email_token_redirect = f"{decoded_email_token['redirect_url']}?token={email_token}"
+        return redirect(email_token_redirect, code=302)
+
+    except JWTError as error:
+        # Handle JWT specific errors (like expired or invalid tokens)
+        logging.error(f"Failed to verify and decode email token: {error}")
+        raise
