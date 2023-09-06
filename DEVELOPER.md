@@ -1,58 +1,56 @@
-# Louis Login Backend
+# Louis Single Sign-On (SSO) Documentation
 
-## Step 1: Install Python
+This document outlines the Single Sign-On (SSO) process for the Louis application. We've broken it down into states and scenarios to provide a comprehensive understanding.
 
-Before installing Flask, we need to install Python on our Windows machine. Go to the official Python website and download the latest version of Python for Windows.
+## States:
 
-Once the download is complete, run the installer and follow the instructions to install Python on your system. During the installation process, make sure to select the option to add Python to your system path.
+1. **INITIAL_STATE**: This is the initial state of the Louis Login back-end. Typically, it represents the starting point for the SSO process.
+2. **AWAITING_EMAIL**: The system enters this state after the user is redirected to the Louis Login front-end and is awaiting the user's email input.
+3. **EMAIL_SENT**: Once the user provides a valid email, and the system sends out the verification email, it transitions to this state.
+4. **USER_AUTHENTICATED**: The system enters this state once the user clicks on the verification link from their email, and the token is validated.
 
-## Step 2: Install VS Code
+## SSO Process Overview:
 
-Next, we’ll need to install Visual Studio Code (VS Code) on our system. Go to the official VS Code website and download the latest version of VS Code for Windows.
+### 1. Client Application Visit:
+- The user goes to the client application website.
+- The client app checks for a session cookie to determine if the user is already logged in.
+  - **Yes**: Redirect to the client application main page.
+  - **No**: Check for a JWT token in the request from Louis Login Back-end.
+    - **No**: Generate JWT token with app id & redirect URL, then redirect to Louis Login backend with JWT in the URL query.
+    - **Yes**: Decode and validate the JWT to extract token information, then generate a session cookie.
 
-Once the download is complete, run the installer and follow the instructions to install VS Code on your system.
+### 2. Louis Login Back-end & Front-end Interaction:
+- On receiving the JWT with app id and redirect URL, Louis Login back-end decodes the token.
+- If valid, the system redirects the user to the Louis Login front-end, passing on the token in the URL query.
+- At the Louis Login front-end, the user is prompted to enter their email address.
 
-## Step 3: Create a Virtual Environment
+### 3. Email Verification Process:
+- After the user submits a valid email, the system sends an HTTP request to Louis login.
+- The back-end then generates and sends a verification link with a token to the provided email address.
 
-After installing Python and VS Code, we’ll need to create a virtual environment for our Flask project. A virtual environment is a self-contained environment that allows us to install Python packages without affecting the global Python installation on our system.
+### 4. Verification Link:
+- The user clicks on the verification link.
+- They are redirected to Louis Login back-end for link validation.
+- If everything is in order, the user is redirected to the original client application where the SSO process starts again (refer to step 1). This time, a JWT is present in the request, and thus, a session cookie gets generated, transitioning the user to the main page.
 
-To create a virtual environment, open a new terminal window in VS Code and navigate to the root directory of your project. Then, run the following command to create a new virtual environment:
+## Error Handling Scenarios:
 
-```bash
-python -m venv venv
-```
+### Scenario 1: Verification Link in a Different Browser:
+- If a user opens the verification link in a different browser, the state in this new browser is `INITIAL_STATE`.
+- Despite being in `INITIAL_STATE`, the back-end processes the token from the verification link.
+- If the token is valid, the system redirects the user to the client application.
 
-This command will create a new virtual environment named ‘venv’ in the root directory of your project.
+### Scenario 2: Unexpected Token in `AWAITING_EMAIL` State:
+- In the `AWAITING_EMAIL` state, if the back-end receives a URL token without an accompanying email JSON:
+  - The system attempts to decode the token.
+  - If it's a client JWT, it redirects the user back to the Louis Login front-end.
+  - If it's a verification token, the token is processed, and if valid, the user is redirected to the client application.
 
-## Step 4: Activate the Virtual Environment
+### Scenario 3: Client JWT During `EMAIL_SENT` State:
+- If the back-end in the `EMAIL_SENT` state receives a Client JWT (indicating a restart of the SSO process) instead of a verification link:
+  - The system tries to decode the token.
+  - If it's a valid client JWT, the user is redirected back to the Louis Login front-end.
 
-After creating the virtual environment, we need to activate it. To activate the virtual environment, run the following command in the terminal:
+---
 
-```bash
-venv\Scripts\activate
-```
-This command will activate the virtual environment, and you’ll see the name of your virtual environment in the terminal prompt.
-
-## Step 5: Install Flask
-
-With the virtual environment activated, we can now install Flask using pip, the package manager for Python. To install Flask, run the following command in the terminal:
-
-```bash
-pip install flask
-```
-This command will download and install Flask and all its dependencies in your virtual environment.
-
-## Step 6: Run the Flask Application
-
-With the Flask application created, we can now run it using the following command:
-```bash
-flask run
-```
-This command will start the Flask development server, and you’ll be able to access your application by navigating to http://localhost:5000/ in your web browser.
-
-## Step 7: Starting the application with debugging
-
-In the VS Code editor, click on the "Run and Debug" icon on the left-hand side panel, or press Ctrl + Shift + D on your keyboard. This will open the "Run and Debug" panel in VS Code. Click on start Debugging.
-
-
-
+This documentation provides a holistic view of the SSO process.
