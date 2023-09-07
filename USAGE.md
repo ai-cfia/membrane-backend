@@ -7,3 +7,10 @@
 Here's an example configuration: 
 
    For example: `ALLOWED_EMAIL_DOMAINS=gc.ca,canada.ca,inspection.gc.ca`
+
+## Installing Dependencies
+
+If you have previously saved your dependencies in a `requirements.txt` file and wish to install them again at a later time, you can do so with the following command:
+
+```bash
+pip install -r requirements.txt

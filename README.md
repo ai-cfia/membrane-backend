@@ -1,22 +1,54 @@
 # Louis Login Backend
 
-Welcome to the Louis Login Backend - a secure and seamless single sign-on solution that provides users with a convenient way to authenticate across multiple client applications.
+Louis Login Backend is a centralized authentication system designed for Single Sign-On (SSO) functionality. It streamlines user authentication across multiple client applications by providing a seamless flow for token-based email verification.
 
-## Overview
+## Workflow Overview:
 
-Louis Login Backend serves as the bridge between client applications and the Louis Login Frontend, where users provide their email for authentication. Our backend system is designed to ensure a streamlined authentication process, minimize disruptions, and handle unexpected user behaviors or system states.
+### 1. Client Application Check
+* The user accesses the client application website.
+* The application checks for a session cookie to determine if the user is already authenticated.
+  * If a session cookie exists: The user is redirected to the client application's main page.
+  * If no session cookie:
+    * The application checks for a JWT token from the Louis Login Backend.
+      * If no JWT token: 
+        1. The application generates a JWT token containing an app ID and a redirect URL.
+        2. It then redirects the user to the Louis Login Backend, passing the JWT in the URL query.
+      * If JWT token exists:
+        1. The token is decoded and validated to extract the information.
+        2. A session cookie is generated.
 
-## Features
+### 2. Interaction with Louis Login Backend
+* If the client application doesn't have a session cookie and has been redirected to the Louis Login Backend with a JWT:
+  * Louis Login Backend decodes and validates the token.
+  * If the token is valid, the user is redirected to the Louis Login Front-end, with the token passed along in the URL query.
+  * At the Louis Login Front-end, the user is prompted to input their email address to receive a verification link.
 
-- **Email-Based Authentication**: Users only need to provide their email to initiate the login process.
-- **Token-Based Verification**: Leveraging JWT for secure token generation and validation.
-- **Flexible Redirection**: Smartly handle redirections based on system states and user actions.
-- **Error Handling**: Designed to gracefully manage disruptions in the authentication flow.
+### 3. Email Verification
+* On submission of a valid email:
+  * An HTTP request is sent to Louis Login Backend containing the email.
+  * A verification link embedded with a token is generated and dispatched to the provided email address.
 
-## Getting Started
+### 4. Link Verification & Redirection
+* The user clicks the verification link, initiating a redirection to Louis Login Backend.
+* The link is validated, and if all checks pass, the user is directed back to the original client application.
+* The client application then revisits Step 1, this time recognizing the JWT from Louis Login Backend, decoding and validating it to generate a session cookie. The user is finally led to the main page, completing the SSO process.
 
-1. **Visit the Client Application**: Start your authentication journey from the client application website.
-2. **Provide Your Email**: If not already authenticated, you'll be redirected to the Louis Login Frontend to input your email.
-3. **Verify Via Email**: Once submitted, you'll receive a verification link in your inbox. Clicking on this link will complete the authentication process.
-4. **Seamless Redirection**: After verification, you'll be automatically redirected to the original client application, now authenticated.
+## API Endpoint: `authenticate`
 
+This endpoint performs multifaceted duties:
+
+* **Client JWT & No Email**:
+  * The request originates from the client application.
+  * Louis Login Backend validates the token.
+  * If valid, the user is redirected to Louis Login Front-end to provide an email address.
+
+* **Client JWT & Email**:
+  * Louis Login Backend processes the JWT and email.
+  * If both are valid, a verification link embedded with a token is generated and emailed to the user.
+
+* **No Client JWT & Verification Token**:
+  * Indicates an attempt to verify an email link.
+  * The user is redirected back to the initiating client application.
+  * The client application then processes and establishes a signed-in session cookie.
+
+---
