@@ -1,54 +1,111 @@
-# Louis Login Backend
+## Setting Up a Flask Application
 
-Louis Login Backend is a centralized authentication system designed for Single Sign-On (SSO) functionality. It streamlines user authentication across multiple client applications by providing a seamless flow for token-based email verification.
+Follow the instructions below to set up a Flask application in your environment:
 
-## Workflow Overview:
+### 1. Check Pip Version:
+Before you start, ensure you have `pip` installed. Check its version with:
+```bash
+pip --version
+```
 
-### 1. Client Application Check
-* The user accesses the client application website.
-* The application checks for a session cookie to determine if the user is already authenticated.
-  * If a session cookie exists: The user is redirected to the client application's main page.
-  * If no session cookie:
-    * The application checks for a JWT token from the Louis Login Backend.
-      * If no JWT token: 
-        1. The application generates a JWT token containing an app ID and a redirect URL.
-        2. It then redirects the user to the Louis Login Backend, passing the JWT in the URL query.
-      * If JWT token exists:
-        1. The token is decoded and validated to extract the information.
-        2. A session cookie is generated.
+### 2. Upgrade Pip, Setuptools, and Virtualenv:
+It's a good practice to keep your tools updated. Run the following command:
+```bash
+python -m pip install --upgrade pip setuptools virtualenv
+```
 
-### 2. Interaction with Louis Login Backend
-* If the client application doesn't have a session cookie and has been redirected to the Louis Login Backend with a JWT:
-  * Louis Login Backend decodes and validates the token.
-  * If the token is valid, the user is redirected to the Louis Login Front-end, with the token passed along in the URL query.
-  * At the Louis Login Front-end, the user is prompted to input their email address to receive a verification link.
+### 3. Create a Virtual Environment:
+To create an isolated environment for your project, set up a virtual environment named `venv` (or another name you prefer):
+```bash
+python -m venv venv
+```
 
-### 3. Email Verification
-* On submission of a valid email:
-  * An HTTP request is sent to Louis Login Backend containing the email.
-  * A verification link embedded with a token is generated and dispatched to the provided email address.
+### 4. Activate the Virtual Environment:
+Before installing any packages, activate your virtual environment:
 
-### 4. Link Verification & Redirection
-* The user clicks the verification link, initiating a redirection to Louis Login Backend.
-* The link is validated, and if all checks pass, the user is directed back to the original client application.
-* The client application then revisits Step 1, this time recognizing the JWT from Louis Login Backend, decoding and validating it to generate a session cookie. The user is finally led to the main page, completing the SSO process.
+**On Windows:**
+```bash
+venv\Scripts\activate
+```
 
-## API Endpoint: `authenticate`
+**On macOS and Linux:**
+```bash
+source venv/bin/activate
+```
 
-This endpoint performs multifaceted duties:
+### 5. Install Project Dependencies:
+Ensure you have a `requirements.txt` file in your project directory. Install all dependencies with:
+```bash
+pip install -r requirements.txt
+```
+---
 
-* **Client JWT & No Email**:
-  * The request originates from the client application.
-  * Louis Login Backend validates the token.
-  * If valid, the user is redirected to Louis Login Front-end to provide an email address.
+Now, you can proceed with running your Flask application or any other tasks. Always ensure that your virtual environment is activated when working on the project to maintain dependencies separately from your global Python environment.
 
-* **Client JWT & Email**:
-  * Louis Login Backend processes the JWT and email.
-  * If both are valid, a verification link embedded with a token is generated and emailed to the user.
 
-* **No Client JWT & Verification Token**:
-  * Indicates an attempt to verify an email link.
-  * The user is redirected back to the initiating client application.
-  * The client application then processes and establishes a signed-in session cookie.
+## 6. Environment Variable Configuration:
+
+To run the Flask application correctly, it requires some environment variables to be set. Follow the steps below to set them up:
+
+1. Navigate to the root directory of the project and create a new file named `.env`.
+2. Open this `.env` file using your preferred text editor.
+
+Now, define each of the following variables:
+
+### ALLOWED_EMAIL_DOMAINS
+- **Description:** List of email domains that are accepted by the application.
+- **Format:** Comma-separated list of domains.
+- **Example:** `ALLOWED_EMAIL_DOMAINS=gc.ca,canada.ca,inspection.gc.ca`
+
+### SECRET_KEY
+- **Description:** The secret key used for creating encrypted tokens and for the Flask session.
+- **Recommendation:** Generate a strong random value for this.
+
+### JWT_ACCESS_TOKEN_EXPIRES_MINUTES
+- **Description:** The expiration time (in minutes) for the JWT access token.
+- **Example:** `JWT_ACCESS_TOKEN_EXPIRES_MINUTES=30`
+
+### SESSION_TYPE
+- **Description:** Specifies where to store the session data. Options can include 'filesystem', 'redis', 'memcached', etc. 
+- **Example:** `SESSION_TYPE=filesystem`
+
+### CLIENT_PUBLIC_KEYS_DIRECTORY
+- **Description:** Path to the directory where client public keys are stored. These keys are used for JWT validation.
+- **Example:** `CLIENT_PUBLIC_KEYS_DIRECTORY=keys/public_keys`
+
+### SERVER_PRIVATE_KEY
+- **Description:** Path to the server's private key file. This key is used for creating and signing tokens.
+- **Example:** `SERVER_PRIVATE_KEY=keys/server_private.pem`
+
+### SERVER_PUBLIC_KEY
+- **Description:** Path to the server's public key file. This key is used for verifying tokens.
+- **Example:** `SERVER_PUBLIC_KEY=keys/server_public.pem`
+
+### SESSION_LIFETIME_MINUTES
+- **Description:** Duration (in minutes) after which the session will expire.
+- **Example:** `SESSION_LIFETIME_MINUTES=30`
+
+### REDIRECT_URL_TO_LOUIS_FRONTEND
+- **Description:** The URL to which the Louis login backend will redirect users, leading them to the Louis login frontend where they can provide an email address.
+- **Example:** `REDIRECT_URL_TO_LOUIS_FRONTEND=https://login.louisfrontend.com/`
+
+Once you have defined all these variables, save and close the `.env` file. The Flask application will now use these environment variable values when it runs.
+
+### 7. Run the Main Flask Application:
+With your virtual environment activated, start the main `app.py`:
+```bash
+flask run
+```
+
+### 8. Simulate a Client Application:
+Open a separate terminal or command prompt. Make sure the virtual environment is activated and then run the `test1app.py` to simulate a client application:
+```bash
+flask --app .\test1app.py run --port=4000
+```
+
+### 9. Interact with Louis Login Frontend:
+Ensure that the Louis Login Frontend React application is running, ideally on `localhost`. This application will serve as the frontend interface for users to provide their email addresses to Louis Login Backend.
 
 ---
+
+You can now interact with both the main Flask application and the client simulator to validate the entire authentication flow.
