@@ -27,12 +27,6 @@ Before installing any packages, activate your virtual environment:
 ```bash
 venv\Scripts\activate
 ```
-
-**On macOS and Linux:**
-```bash
-source venv/bin/activate
-```
-
 ### 5. Install Project Dependencies:
 Ensure you have a `requirements.txt` file in your project directory. Install all dependencies with:
 ```bash
