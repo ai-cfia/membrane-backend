@@ -24,7 +24,7 @@ def app():
     flask_app.config['SESSION_TYPE'] = 'memory'
     flask_app.config['TESTING'] = True
     # Add this configuration for SERVER_NAME
-    flask_app.config['SERVER_NAME'] = 'localhost:5000'
+    flask_app.config['SERVER_NAME'] = 'login.example.com'
 
     yield flask_app
     # pylint: disable=redefined-outer-name
