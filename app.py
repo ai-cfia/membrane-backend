@@ -10,11 +10,12 @@ import traceback
 from flask_cors import CORS
 from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager
-from flask import Flask, request, jsonify, session, url_for
+from flask import Flask, request, jsonify
 from flask_session import Session
-from request_helpers import (validate_email_from_request)
+from request_helpers import (validate_email_from_request, EmailError)
 from jwt_utils import (decode_client_jwt_token, login_redirect_with_client_jwt,
-                       redirect_to_client_app_using_verification_token, generate_email_verification_token, JWTError)
+                       redirect_to_client_app_using_verification_token, 
+                       generate_email_verification_token, JWTError)
 from environment_validation import validate_environment_settings
 from error_handlers import register_error_handlers
 
@@ -91,7 +92,8 @@ def authenticate():
     2. If the request only contains a valid client JWT without an email:
         - Redirects the user to the Louis login frontend.
     3. If client JWT decoding fails:
-        - Attempts to decode using the verification token method, to validate a user attempting to confirm their email.
+        - Attempts to decode using the verification token method, to validate a user attempting 
+          to confirm their email.
 
     Returns:
         JSON response or redirect, depending on the provided inputs and their validation.
@@ -99,7 +101,7 @@ def authenticate():
     app.logger.debug('Entering authenticate route')
 
     try:
-        
+
         clientapp_token = request.args.get('token')
         clientapp_decoded_token = decode_client_jwt_token(clientapp_token, CLIENT_PUBLIC_KEYS_DIRECTORY)
 
@@ -108,7 +110,7 @@ def authenticate():
             # Validate email.
             email = validate_email_from_request(request.get_json().get('email'))
             # Generate token expiration timestamp.
-            email_token, verification_url = generate_email_verification_token(
+            verification_url = generate_email_verification_token(
                 email,
                 clientapp_decoded_token['redirect_url'],
                 jwt_expiration_minutes,
@@ -116,26 +118,22 @@ def authenticate():
             )
 
             # Construct the verification URL which includes the new JWT token.
-            verification_url = url_for('authenticate', token=email_token, _external=True)
             print(verification_url)  # Debug purpose; remove or comment out for production.
-
             # TODO: Send email to user containing verification url.
-            session['state'] = 'EMAIL_SENT'
-            print('CURRENT STATE: EMAIL_SENT')
 
             return jsonify({'message': 'Valid email address. Email sent with JWT link.'}), 200
-        
+
         # Redirect user if they reload the link without providing an email.
         return login_redirect_with_client_jwt(clientapp_token, CLIENT_PUBLIC_KEYS_DIRECTORY, REDIRECT_URL_TO_LOUIS_FRONTEND)
-        
-    except (JWTError) as error:
+
+    except (JWTError, EmailError) as error:
         app.logger.error("Error occurred: %s\n%s", error, traceback.format_exc())         
         try:
             app.logger.info("Attempting to redirect_to_client_app_using_verification_token")
             return redirect_to_client_app_using_verification_token(clientapp_token, SERVER_PUBLIC_KEY, TOKEN_BLACKLIST)
         except (JWTError) as inner_error:
             app.logger.error("Secondary error encountered during redirect. Type of error: %s\n%s", type(inner_error), traceback.format_exc())
-            # TODO: Redirect to Louis main site.
+            # TODO: Redirect to Louis main site if token is invalid.
 
     return jsonify({'error': 'Invalid request method'}), 405  # 405 is for Method Not Allowed
 

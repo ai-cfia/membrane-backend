@@ -4,7 +4,7 @@ Utilities for encoding, decoding, and validating JWT tokens.
 import logging
 from pathlib import Path
 from datetime import timedelta, datetime
-from flask import session, redirect, url_for
+from flask import redirect, url_for
 from jwt import decode, encode, exceptions as jwt_exceptions
 
 class JWTError(Exception):
@@ -52,7 +52,7 @@ def decode_client_jwt_token(jwt_token, keys_directory: Path):
     try:
         # Decode the token using the fetched public key
         decoded_token = decode(jwt_token, public_key, algorithms=['RS256'])
-        # Retrieve the redirect URL stored in the session.
+        # Retrieve the redirect URL.
         redirect_url = decoded_token['redirect_url']
         if not redirect_url:
             raise JWTError("No redirect URL found in Token.")
@@ -100,9 +100,8 @@ def process_email_verification_token(email_token, server_public_key, token_black
     Processes a token from an email verification URL.
 
     The function decodes the given email token, validates its authenticity, and adds it to a 
-    blacklist to prevent reuse. Upon successful validation, the user's session is updated 
-    to an authenticated state, and a redirection is performed based on the decoded token's 
-    information.
+    blacklist to prevent reuse. Upon successful validation, a redirection is performed based 
+    on the decoded token's information.
 
     Args:
         email_token (str): The JWT token from the email verification URL.
@@ -121,10 +120,6 @@ def process_email_verification_token(email_token, server_public_key, token_black
 
         # Add the token to the blacklist to ensure it's not reused
         token_blacklist.add(email_token)
-
-        # Update the session to reflect the user's authenticated state
-        session['authenticated'] = True
-        session['state'] = 'USER_AUTHENTICATED'
 
         # Construct the redirect URL using the decoded information and redirect
         email_token_redirect = f"{decoded_email_token['redirect_url']}?token={email_token}"
@@ -203,7 +198,7 @@ def generate_email_verification_token(email, redirect_url, expiration_minutes, s
     # Construct the verification URL which includes the new JWT token.
     verification_url = url_for('authenticate', token=email_token, _external=True)
 
-    return email_token, verification_url
+    return verification_url
 
 def encode_email_verification_token(payload, server_private_key_path):
     """
