@@ -5,16 +5,16 @@ from pathlib import Path
 import pytest
 import jwt
 from jwt.exceptions import DecodeError
-from jwt_utils import decode_jwt_token, JWTPublicKeyNotFoundError, JWTError
+from jwt_utils import decode_client_jwt_token, JWTPublicKeyNotFoundError, JWTError
 
 # Sample public and private keys for test purposes
 with open('tests/client_private_keys/testapp1_private_key.pem', 'rb') as f:
     PRIVATE_KEY = f.read()
 
-with open('tests/test_public_keys/test1_public_key.pem', 'rb') as f:
+with open('tests/client_public_keys/testapp1_public_key.pem', 'rb') as f:
     PUBLIC_KEY = f.read()
 
-TEST_KEY_DIR = Path('tests/test_public_keys')
+TEST_KEY_DIR = Path('tests/client_public_keys')
 
 @pytest.fixture
 def jwt_generator():
@@ -29,7 +29,7 @@ def test_decode_jwt_without_app_id(generate_jwt_token):
     """Test decoding of JWT without an app_id."""
     jwt_token = generate_jwt_token({"data": "test_data"})
     with pytest.raises(JWTError, match="No app_id in JWT payload."):
-        decode_jwt_token(jwt_token, TEST_KEY_DIR, {})
+        decode_client_jwt_token(jwt_token, TEST_KEY_DIR)
 
 
 def test_decode_jwt_with_nonexistent_app_id(generate_jwt_token):
@@ -41,7 +41,7 @@ def test_decode_jwt_with_nonexistent_app_id(generate_jwt_token):
     }
     jwt_token = generate_jwt_token(payload)
     with pytest.raises(JWTPublicKeyNotFoundError) as exc_info:
-        decode_jwt_token(jwt_token, TEST_KEY_DIR, {})
+        decode_client_jwt_token(jwt_token, TEST_KEY_DIR)
     assert str(exc_info.value) == f'Public key not found for app_id: {non_existent_app_id}.'
 
 
@@ -49,7 +49,7 @@ def test_decode_jwt_with_invalid_token():
     """Test decoding of an invalid JWT token."""
     invalid_jwt = "invalid.jwt.token"
     with pytest.raises(DecodeError):
-        decode_jwt_token(invalid_jwt, TEST_KEY_DIR, {})
+        decode_client_jwt_token(invalid_jwt, TEST_KEY_DIR)
 
 def test_decode_jwt_invalid_signature(generate_jwt_token):
     """Test decoding a JWT token with a tampered signature."""
@@ -60,8 +60,7 @@ def test_decode_jwt_invalid_signature(generate_jwt_token):
     print(jwt_token)
 
     with pytest.raises(JWTError):
-        decode_jwt_token(jwt_token, TEST_KEY_DIR, {})
-
+        decode_client_jwt_token(jwt_token, TEST_KEY_DIR)
 
 def test_decode_jwt_malformed_header(generate_jwt_token):
     """Test decoding a JWT token with a malformed header."""
@@ -72,4 +71,4 @@ def test_decode_jwt_malformed_header(generate_jwt_token):
     jwt_token = '.'.join(jwt_parts)
 
     with pytest.raises(DecodeError):
-        decode_jwt_token(jwt_token, TEST_KEY_DIR, {})
+        decode_client_jwt_token(jwt_token, TEST_KEY_DIR)
