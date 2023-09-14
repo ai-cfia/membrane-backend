@@ -52,3 +52,6 @@ This endpoint performs multifaceted duties:
   * The client application then processes and establishes a signed-in session cookie.
 
 ---
+## Workflow Sequence Diagram:
+
+![Workflow Diagram](./diagrams/Louis%20Login%20Backend%20Sequence%20Diagram.png)
