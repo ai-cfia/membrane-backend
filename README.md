@@ -140,13 +140,7 @@ You can now interact with both the main Flask application and the client simulat
 #### Steps
 
 1. Navigate to the project's root directory.
-2. Make the script executable:
-
-   ```bash
-   chmod +x generate_keys.sh
-   ```
-
-3. Run the following script:
+2. Run the following script:
 
    ```bash
    ./generate_keys.sh
