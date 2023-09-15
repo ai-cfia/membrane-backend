@@ -31,6 +31,8 @@ __pycache__/
 
 # Ignore any sensitive or private information (e.g., API keys, passwords)
 secrets.txt
+keys/
+*.pem
 
 # Ignore Flask Sessions
 flask_session/
