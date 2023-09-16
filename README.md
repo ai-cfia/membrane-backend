@@ -199,7 +199,7 @@ REDIRECT_URL_TO_LOUIS_FRONTEND=http://localhost:3000
 3. Run the Docker container:
 
    ```bash
-   docker run -p $PORT:$PORT -e PORT=$PORT --env-file .env flask-app
+   docker run -v ./keys:/app/keys -p $PORT:$PORT -e PORT=$PORT --env-file .env flask-app
    ```
 
 #### Note
