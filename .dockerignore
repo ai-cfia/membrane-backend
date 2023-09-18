@@ -27,6 +27,5 @@ requirements.txt
 *.sh
 
 # Ignore secrets
-secrets.txt
 keys/
 *.pem
