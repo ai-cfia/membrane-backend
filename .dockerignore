@@ -25,3 +25,7 @@ requirements.txt
 
 # Ignore bash scripts
 *.sh
+
+# Ignore secrets
+keys/
+*.pem
