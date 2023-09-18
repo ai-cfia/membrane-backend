@@ -6,7 +6,7 @@ def validate_environment_settings(CLIENT_PUBLIC_KEYS_DIRECTORY, SERVER_PRIVATE_K
     - CLIENT_PUBLIC_KEYS_DIRECTORY (Path): The directory containing the client public keys.
     - SERVER_PRIVATE_KEY (Path): The path to the server's private key.
     - SERVER_PUBLIC_KEY (Path): The path to the server's public key.
-    - REDIRECT_URL_TO_MEMBRANE_FRONTEND (str): The redirect URL to the Louis frontend.
+    - REDIRECT_URL_TO_MEMBRANE_FRONTEND (str): The redirect URL to the Louis Frontend.
 
     Returns:
     - True if all validations pass.
