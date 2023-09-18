@@ -98,10 +98,10 @@ Now, define each of the following variables:
 - **Description:** Duration (in minutes) after which the session will expire.
 - **Example:** `SESSION_LIFETIME_MINUTES=30`
 
-### REDIRECT_URL_TO_LOUIS_FRONTEND
+### REDIRECT_URL_TO_MEMBRANE_FRONTEND
 
-- **Description:** The URL to which the Louis login backend will redirect users, leading them to the Louis login frontend where they can provide an email address.
-- **Example:** `REDIRECT_URL_TO_LOUIS_FRONTEND=https://login.louisfrontend.com/`
+- **Description:** The URL to which the Membrane backend will redirect users, leading them to the Membrane Frontend where they can provide an email address.
+- **Example:** `REDIRECT_URL_TO_MEMBRANE_FRONTEND=https://membranefrontend.com/`
 
 Once you have defined all these variables, save and close the `.env` file. The Flask application will now use these environment variable values when it runs.
 
@@ -121,9 +121,9 @@ Open a separate terminal or command prompt. Make sure the virtual environment is
 flask --app .\test1app.py run --port=4000
 ```
 
-### 9. Interact with Louis Login Frontend:
+### 9. Interact with Membrane Frontend:
 
-Ensure that the Louis Login Frontend React application is running, ideally on `localhost`. This application will serve as the frontend interface for users to provide their email addresses to Louis Login Backend.
+Ensure that the Membrane Frontend React application is running, ideally on `localhost`. This application will serve as the frontend interface for users to provide their email addresses to Membrane Backend.
 
 ---
 
@@ -169,15 +169,15 @@ openssl rand -hex 32
 3. Add the following variables:
 
 ```
-ALLOWED_EMAIL_DOMAINS=gc.ca
-SECRET_KEY=<your_secret_key_here>
-JWT_ACCESS_TOKEN_EXPIRES_MINUTES=2
-SESSION_TYPE=filesystem
-CLIENT_PUBLIC_KEYS_DIRECTORY=keys/
-SERVER_PRIVATE_KEY=keys/server_private_key.pem
-SERVER_PUBLIC_KEY=keys/server_public_key.pem
-SESSION_LIFETIME_MINUTES=4
-REDIRECT_URL_TO_LOUIS_FRONTEND=http://localhost:3000
+ALLOWED_EMAIL_DOMAINS=
+SECRET_KEY=
+JWT_ACCESS_TOKEN_EXPIRES_MINUTES=
+SESSION_TYPE=
+CLIENT_PUBLIC_KEYS_DIRECTORY=
+SERVER_PRIVATE_KEY=
+SERVER_PUBLIC_KEY=
+SESSION_LIFETIME_MINUTES=
+REDIRECT_URL_TO_MEMBRANE_FRONTEND=
 ```
 
 4. Replace `<your_secret_key_here>` with the generated key from step 2.

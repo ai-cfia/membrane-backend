@@ -29,7 +29,7 @@ def test_client_jwt_without_email_returns_302_found(test_client: FlaskClient, sa
     print(response)
     # Assertions to check the desired behavior.
     # If the request only contains a valid client JWT without an email, ...
-    # ... then the user gets redirected to louis frontend.
+    # ... then the user gets redirected to Membrane Frontend.
     assert response.status_code == 302
 
 @pytest.mark.usefixtures("set_allowed_domains")

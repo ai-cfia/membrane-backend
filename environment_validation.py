@@ -1,4 +1,4 @@
-def validate_environment_settings(CLIENT_PUBLIC_KEYS_DIRECTORY, SERVER_PRIVATE_KEY, SERVER_PUBLIC_KEY, REDIRECT_URL_TO_LOUIS_FRONTEND):
+def validate_environment_settings(CLIENT_PUBLIC_KEYS_DIRECTORY, SERVER_PRIVATE_KEY, SERVER_PUBLIC_KEY, REDIRECT_URL_TO_MEMBRANE_FRONTEND):
     """
     Validate the environment settings required for the application.
     
@@ -6,7 +6,7 @@ def validate_environment_settings(CLIENT_PUBLIC_KEYS_DIRECTORY, SERVER_PRIVATE_K
     - CLIENT_PUBLIC_KEYS_DIRECTORY (Path): The directory containing the client public keys.
     - SERVER_PRIVATE_KEY (Path): The path to the server's private key.
     - SERVER_PUBLIC_KEY (Path): The path to the server's public key.
-    - REDIRECT_URL_TO_LOUIS_FRONTEND (str): The redirect URL to the Louis frontend.
+    - REDIRECT_URL_TO_MEMBRANE_FRONTEND (str): The redirect URL to the Louis frontend.
 
     Returns:
     - True if all validations pass.
@@ -28,7 +28,7 @@ def validate_environment_settings(CLIENT_PUBLIC_KEYS_DIRECTORY, SERVER_PRIVATE_K
         raise ValueError(f"The specified server public key file {SERVER_PUBLIC_KEY} does not exist or is a directory. Please provide a valid path.")
 
     # Check the redirect URL to Louis Frontend
-    if not REDIRECT_URL_TO_LOUIS_FRONTEND:
+    if not REDIRECT_URL_TO_MEMBRANE_FRONTEND:
         raise ValueError("The redirect URL to Louis Frontend is not specified. Please provide a valid URL.")
 
     return True

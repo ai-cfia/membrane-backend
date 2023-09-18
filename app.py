@@ -1,5 +1,5 @@
 """
-CFIA Louis Backend Flask Application
+CFIA Membrane Backend Flask Application
 """
 import logging
 import os
@@ -62,14 +62,14 @@ CLIENT_PUBLIC_KEYS_DIRECTORY = Path(
 )
 SERVER_PRIVATE_KEY = Path(os.getenv("SERVER_PRIVATE_KEY", ""))
 SERVER_PUBLIC_KEY = Path(os.getenv("SERVER_PUBLIC_KEY", ""))
-REDIRECT_URL_TO_LOUIS_FRONTEND = os.getenv("REDIRECT_URL_TO_LOUIS_FRONTEND", "")
+REDIRECT_URL_TO_MEMBRANE_FRONTEND = os.getenv("REDIRECT_URL_TO_MEMBRANE_FRONTEND", "")
 
 # Validate the environment settings
 validate_environment_settings(
     CLIENT_PUBLIC_KEYS_DIRECTORY,
     SERVER_PRIVATE_KEY,
     SERVER_PUBLIC_KEY,
-    REDIRECT_URL_TO_LOUIS_FRONTEND,
+    REDIRECT_URL_TO_MEMBRANE_FRONTEND,
 )
 
 # A basic in-memory store for simplicity;
@@ -105,7 +105,7 @@ def authenticate():
         - Validates the provided email.
         - Generates a verification token and sends a verification email to the provided address.
     2. If the request only contains a valid client JWT without an email:
-        - Redirects the user to the Louis login frontend.
+        - Redirects the user to the Membrane Frontend.
     3. If client JWT decoding fails:
         - Attempts to decode using the verification token method, to validate a user attempting
           to confirm their email.
@@ -147,7 +147,7 @@ def authenticate():
         return login_redirect_with_client_jwt(
             clientapp_token,
             CLIENT_PUBLIC_KEYS_DIRECTORY,
-            REDIRECT_URL_TO_LOUIS_FRONTEND,
+            REDIRECT_URL_TO_MEMBRANE_FRONTEND,
         )
 
     except (JWTError, EmailError) as error:
