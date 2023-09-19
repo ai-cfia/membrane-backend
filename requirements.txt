@@ -10,3 +10,4 @@ watchdog
 flask-cors
 flask_session
 gunicorn
+azure-communication-email
