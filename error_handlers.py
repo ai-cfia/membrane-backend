@@ -1,4 +1,4 @@
-from flask import jsonify
+from quart import jsonify
 
 # pylint: disable=unused-variable
 def register_error_handlers(app):

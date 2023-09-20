@@ -11,7 +11,7 @@ def send_email(
     body,
     logger: Logger,
     html_content=None,
-):
+) -> dict:
     """
     Send an email using Azure Communication Services.
 
@@ -23,15 +23,14 @@ def send_email(
     - body (str): The plain text body content of the email.
     - html_content (str): The HTML content of the email. Optional.
 
+    Returns:
+    - dict: A dictionary containing the operation status and ID if successful.
+
     Raises:
     - RuntimeError: If the email sending process fails or times out.
-
-    Source: https://learn.microsoft.com/en-ca/azure/communication-services/quickstarts/email/send-email?tabs=windows%2Cconnection-string&pivots=programming-language-python
     """
-    # Initialize the EmailClient
     email_client = EmailClient.from_connection_string(connection_string)
 
-    # Construct the message
     message = {
         "content": {
             "subject": subject,
@@ -44,7 +43,6 @@ def send_email(
         "senderAddress": sender_email,
     }
 
-    # Send the email and poll for its status
     POLLER_WAIT_TIME = 10
     time_elapsed = 0
 
@@ -52,19 +50,20 @@ def send_email(
         poller = email_client.begin_send(message)
 
         while not poller.done():
-            logger.debug("Email send poller status: " + poller.status())
-
+            logger.debug(f"Email send poller status: {poller.status()}")
             poller.wait(POLLER_WAIT_TIME)
             time_elapsed += POLLER_WAIT_TIME
 
             if time_elapsed > 18 * POLLER_WAIT_TIME:
                 raise RuntimeError("Polling timed out.")
 
-        if poller.result()["status"] == "Succeeded":
-            logger.info(
-                f"Successfully sent the email (operation id: {poller.result()['id']})"
-            )
+        result = poller.result()
+        if result["status"] == "Succeeded":
+            logger.info(f"Successfully sent the email (operation id: {result['id']})")
+            return {"status": "Succeeded", "operation_id": result["id"]}
         else:
-            raise RuntimeError(str(poller.result()["error"]))
+            raise RuntimeError(result["error"])
+
     except Exception as ex:
         logger.exception(ex)
+        raise RuntimeError(f"An error occurred: {str(ex)}")

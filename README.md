@@ -1,6 +1,6 @@
-## Setting Up a Flask Application
+## Setting Up a Quart Application
 
-Follow the instructions below to set up a Flask application in your environment:
+Follow the instructions below to set up a Quart application in your environment:
 
 ### 1. Check Pip Version:
 
@@ -46,11 +46,11 @@ pip install -r requirements.txt
 
 ---
 
-Now, you can proceed with running your Flask application or any other tasks. Always ensure that your virtual environment is activated when working on the project to maintain dependencies separately from your global Python environment.
+Now, you can proceed with running your Quart application or any other tasks. Always ensure that your virtual environment is activated when working on the project to maintain dependencies separately from your global Python environment.
 
 ## 6. Environment Variable Configuration:
 
-To run the Flask application correctly, it requires some environment variables to be set. Follow the steps below to set them up:
+To run the Quart application correctly, it requires some environment variables to be set. Follow the steps below to set them up:
 
 1. Navigate to the root directory of the project and create a new file named `.env`.
 2. Open this `.env` file using your preferred text editor.
@@ -65,7 +65,7 @@ Now, define each of the following variables:
 
 ### SECRET_KEY
 
-- **Description:** The secret key used for creating encrypted tokens and for the Flask session.
+- **Description:** The secret key used for creating encrypted tokens and for the Quart session.
 - **Recommendation:** Generate a strong random value for this.
 
 ### JWT_ACCESS_TOKEN_EXPIRES_MINUTES
@@ -103,22 +103,22 @@ Now, define each of the following variables:
 - **Description:** The URL to which the Louis login backend will redirect users, leading them to the Louis login frontend where they can provide an email address.
 - **Example:** `REDIRECT_URL_TO_LOUIS_FRONTEND=https://login.louisfrontend.com/`
 
-Once you have defined all these variables, save and close the `.env` file. The Flask application will now use these environment variable values when it runs.
+Once you have defined all these variables, save and close the `.env` file. The Quart application will now use these environment variable values when it runs.
 
-### 7. Run the Main Flask Application:
+### 7. Run the Main Quart Application:
 
 With your virtual environment activated, start the main `app.py`:
 
 ```bash
-flask run
+quart run
 ```
 
 ### 8. Simulate a Client Application:
 
-Open a separate terminal or command prompt. Make sure the virtual environment is activated and then run the `test1app.py` to simulate a client application:
+Open a separate terminal or command prompt. Make sure the virtual environment is activated and then run the `testapp1.py` to simulate a client application:
 
 ```bash
-flask --app .\test1app.py run --port=4000
+quart --app testapp1.py run --port=4000
 ```
 
 ### 9. Interact with Louis Login Frontend:
@@ -127,7 +127,7 @@ Ensure that the Louis Login Frontend React application is running, ideally on `l
 
 ---
 
-You can now interact with both the main Flask application and the client simulator to validate the entire authentication flow.
+You can now interact with both the main Quart application and the client simulator to validate the entire authentication flow.
 
 ## Running the app from dockerfile
 
@@ -143,15 +143,15 @@ You can now interact with both the main Flask application and the client simulat
 2. Run the following script:
 
    ```bash
-   ./generate_keys.sh
+   ./generate_keys.sh testapp1
    ```
 
    This will generate four `.pem` files in a folder called `keys`:
 
    - `server_private_key.pem`
    - `server_public_key.pem`
-   - `client_private_key.pem`
-   - `client_public_key.pem`
+   - `testapp1_private_key.pem`
+   - `testapp1_public_key.pem`
 
 #### Note
 
@@ -187,7 +187,7 @@ REDIRECT_URL_TO_LOUIS_FRONTEND=http://localhost:3000
 1. Build the Docker image:
 
    ```bash
-   docker build -t flask-app .
+   docker build -t quart-app .
    ```
 
 2. Set your desired port number:
@@ -199,7 +199,7 @@ REDIRECT_URL_TO_LOUIS_FRONTEND=http://localhost:3000
 3. Run the Docker container:
 
    ```bash
-   docker run -v ./keys:/app/keys -p $PORT:$PORT -e PORT=$PORT --env-file .env flask-app
+   docker run -v ./keys:/app/keys -p $PORT:$PORT -e PORT=$PORT --env-file .env quart-app
    ```
 
 #### Note

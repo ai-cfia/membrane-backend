@@ -1,5 +1,5 @@
 """
-CFIA Louis Backend Flask Application
+CFIA Louis Backend Quart Application
 """
 import logging
 import os
@@ -9,14 +9,14 @@ from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request
-from flask_cors import CORS
-from flask_jwt_extended import JWTManager
-from emails import send_email
+from quart import Quart, jsonify, request
+from quart_cors import cors
+from quart_jwt_extended import JWTManager
+from quart_session import Session
 
+from emails import send_email
 from environment_validation import validate_environment_settings
 from error_handlers import register_error_handlers
-from flask_session import Session
 from jwt_utils import (
     JWTError,
     decode_client_jwt_token,
@@ -26,21 +26,46 @@ from jwt_utils import (
 )
 from request_helpers import EmailError, validate_email_from_request
 
-logging.basicConfig(level=logging.DEBUG)
-
-# Initialize Flask application
-app = Flask(__name__)
-
-# Allow CORS for your Flask app
-CORS(app, resources={r"/*": {"origins": "*", "supports_credentials": True}})
-
 # Load environment variables
 load_dotenv()
+
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*")
+ALLOWED_ORIGINS_LIST = ALLOWED_ORIGINS.split(",")
+# Configuration paths and URLs retrieved from environment variables # TODO: Set default values
+CLIENT_PUBLIC_KEYS_DIRECTORY = Path(
+    os.getenv("CLIENT_PUBLIC_KEYS_DIRECTORY", "keys/public_keys")
+)
+SERVER_PRIVATE_KEY = Path(os.getenv("SERVER_PRIVATE_KEY", ""))
+SERVER_PUBLIC_KEY = Path(os.getenv("SERVER_PUBLIC_KEY", ""))
+REDIRECT_URL_TO_LOUIS_FRONTEND = os.getenv("REDIRECT_URL_TO_LOUIS_FRONTEND", "")
+MEMBRANE_BACKEND_COMM_CONNECTION_STRING = os.getenv(
+    "MEMBRANE_BACKEND_COMM_CONNECTION_STRING"
+)
+MEMBRANE_BACKEND_SENDER_EMAIL = os.getenv("MEMBRANE_BACKEND_SENDER_EMAIL")
+
+# Validate the environment settings
+validate_environment_settings(
+    CLIENT_PUBLIC_KEYS_DIRECTORY,
+    SERVER_PRIVATE_KEY,
+    SERVER_PUBLIC_KEY,
+    REDIRECT_URL_TO_LOUIS_FRONTEND,
+)
+
+# A basic in-memory store for simplicity;
+TOKEN_BLACKLIST = set()
+
+logging.basicConfig(level=logging.DEBUG)
+
+# Initialize Quart application
+app = Quart(__name__)
+
+# Allow CORS for your Quart app
+app = cors(app, allow_origin=ALLOWED_ORIGINS_LIST, allow_credentials=True)
 
 # Configuration for JWT and session settings
 # Fetch secret key or generate a new one if not available
 SECRET_KEY = os.getenv("SECRET_KEY", str(uuid.uuid4()))
-# Set secret key configurations for JWT and Flask session
+# Set secret key configurations for JWT and Quart session
 app.config["JWT_SECRET_KEY"] = SECRET_KEY
 app.config["SECRET_KEY"] = SECRET_KEY
 
@@ -57,49 +82,28 @@ app.config["SESSION_COOKIE_SECURE"] = True
 # Initialize JWT Manager with the app
 jwt = JWTManager(app)
 
-# Configuration paths and URLs retrieved from environment variables # TODO: Set default values
-CLIENT_PUBLIC_KEYS_DIRECTORY = Path(
-    os.getenv("CLIENT_PUBLIC_KEYS_DIRECTORY", "keys/public_keys")
-)
-SERVER_PRIVATE_KEY = Path(os.getenv("SERVER_PRIVATE_KEY", ""))
-SERVER_PUBLIC_KEY = Path(os.getenv("SERVER_PUBLIC_KEY", ""))
-REDIRECT_URL_TO_LOUIS_FRONTEND = os.getenv("REDIRECT_URL_TO_LOUIS_FRONTEND", "")
-MEMBRANE_BACKEND_COMM_CONNECTION_STRING = os.getenv("MEMBRANE_BACKEND_COMM_CONNECTION_STRING")
-MEMBRANE_BACKEND_SENDER_EMAIL = os.getenv("MEMBRANE_BACKEND_SENDER_EMAIL")
-
-# Validate the environment settings
-validate_environment_settings(
-    CLIENT_PUBLIC_KEYS_DIRECTORY,
-    SERVER_PRIVATE_KEY,
-    SERVER_PUBLIC_KEY,
-    REDIRECT_URL_TO_LOUIS_FRONTEND,
-)
-
-# A basic in-memory store for simplicity;
-TOKEN_BLACKLIST = set()
-
-# Configure Flask-Session
+# Configure Quart-Session
 app.config["SESSION_TYPE"] = os.getenv("SESSION_TYPE", default="filesystem")
 Session(app)
 
-# Register custom error handlers for the Flask app
+# Register custom error handlers for the Quart app
 register_error_handlers(app)
 
 
 @app.before_request
-def log_request_info():
+async def log_request_info():
     """Log incoming request headers and body for debugging purposes."""
     app.logger.debug("Headers: %s", request.headers)
-    app.logger.debug("Body: %s", request.get_data())
+    app.logger.debug("Body: %s", await request.get_data())
 
 
 @app.route("/health")
-def health_check():
+async def health_check():
     return "ok", 200
 
 
 @app.route("/authenticate", methods=["GET", "POST"])
-def authenticate():
+async def authenticate():
     """
     Authenticate the client request based on various possible inputs.
 
@@ -127,7 +131,7 @@ def authenticate():
         # If the request contains an email parameter provided by the user.
         if clientapp_decoded_token and request.is_json:
             # Validate email.
-            email = validate_email_from_request(request.get_json().get("email"))
+            email = validate_email_from_request((await request.get_json()).get("email"))
             # Generate token expiration timestamp.
             # Construct the verification URL which includes the new JWT token.
             verification_url = generate_email_verification_token(
@@ -138,7 +142,15 @@ def authenticate():
             )
 
             # Send an email with verification url
-            send_email(MEMBRANE_BACKEND_COMM_CONNECTION_STRING, MEMBRANE_BACKEND_SENDER_EMAIL, email, "Please Verify Your Email Address", verification_url, app.logger)
+            app.add_background_task(
+                send_email,
+                MEMBRANE_BACKEND_COMM_CONNECTION_STRING,
+                MEMBRANE_BACKEND_SENDER_EMAIL,
+                email,
+                "Please Verify Your Email Address",
+                verification_url,
+                app.logger,
+            )
 
             return (
                 jsonify({"message": "Valid email address. Email sent with JWT link."}),

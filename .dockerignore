@@ -16,7 +16,7 @@ flask_session/*
 tests/
 
 # Ignore specific file
-test1app.py
+testapp1.py
 requirements.txt
 
 # Ignore environment files
