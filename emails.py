@@ -1,3 +1,5 @@
+from logging import Logger
+
 from azure.communication.email import EmailClient
 
 
@@ -7,6 +9,7 @@ def send_email(
     recipient_email,
     subject,
     body,
+    logger: Logger,
     html_content=None,
 ):
     """
@@ -49,7 +52,7 @@ def send_email(
         poller = email_client.begin_send(message)
 
         while not poller.done():
-            print("Email send poller status: " + poller.status())
+            logger.debug("Email send poller status: " + poller.status())
 
             poller.wait(POLLER_WAIT_TIME)
             time_elapsed += POLLER_WAIT_TIME
@@ -58,10 +61,10 @@ def send_email(
                 raise RuntimeError("Polling timed out.")
 
         if poller.result()["status"] == "Succeeded":
-            print(
+            logger.info(
                 f"Successfully sent the email (operation id: {poller.result()['id']})"
             )
         else:
             raise RuntimeError(str(poller.result()["error"]))
     except Exception as ex:
-        print(ex)
+        logger.exception(ex)

@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from emails import send_email
 
 from environment_validation import validate_environment_settings
 from error_handlers import register_error_handlers
@@ -63,6 +64,8 @@ CLIENT_PUBLIC_KEYS_DIRECTORY = Path(
 SERVER_PRIVATE_KEY = Path(os.getenv("SERVER_PRIVATE_KEY", ""))
 SERVER_PUBLIC_KEY = Path(os.getenv("SERVER_PUBLIC_KEY", ""))
 REDIRECT_URL_TO_LOUIS_FRONTEND = os.getenv("REDIRECT_URL_TO_LOUIS_FRONTEND", "")
+MEMBRANE_BACKEND_COMM_CONNECTION_STRING = os.getenv("MEMBRANE_BACKEND_COMM_CONNECTION_STRING")
+MEMBRANE_BACKEND_SENDER_EMAIL = os.getenv("MEMBRANE_BACKEND_SENDER_EMAIL")
 
 # Validate the environment settings
 validate_environment_settings(
@@ -126,6 +129,7 @@ def authenticate():
             # Validate email.
             email = validate_email_from_request(request.get_json().get("email"))
             # Generate token expiration timestamp.
+            # Construct the verification URL which includes the new JWT token.
             verification_url = generate_email_verification_token(
                 email,
                 clientapp_decoded_token["redirect_url"],
@@ -133,10 +137,8 @@ def authenticate():
                 SERVER_PRIVATE_KEY,
             )
 
-            # Construct the verification URL which includes the new JWT token.
-            # Debug purpose; remove or comment out for production.
-            print(verification_url)
-            # TODO: Send email to user containing verification url.
+            # Send an email with verification url
+            send_email(MEMBRANE_BACKEND_COMM_CONNECTION_STRING, MEMBRANE_BACKEND_SENDER_EMAIL, email, "Please Verify Your Email Address", verification_url, app.logger)
 
             return (
                 jsonify({"message": "Valid email address. Email sent with JWT link."}),
