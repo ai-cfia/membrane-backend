@@ -57,51 +57,103 @@ To run the Quart application correctly, it requires some environment variables t
 
 Now, define each of the following variables:
 
-### ALLOWED_EMAIL_DOMAINS
+### MEMBRANE_ALLOWED_ORIGINS
 
-- **Description:** List of email domains that are accepted by the application.
+- **Description:** List of origins allowed for cross-origin requests (CORS).
 - **Format:** Comma-separated list of domains.
-- **Example:** `ALLOWED_EMAIL_DOMAINS=gc.ca,canada.ca,inspection.gc.ca`
+- **Example:** `MEMBRANE_ALLOWED_ORIGINS=http://example.com,https://example2.com`
 
-### SECRET_KEY
+### MEMBRANE_SECRET_KEY
 
-- **Description:** The secret key used for creating encrypted tokens and for the Quart session.
+- **Description:** The secret key used for creating encrypted tokens.
 - **Recommendation:** Generate a strong random value for this.
 
-### JWT_ACCESS_TOKEN_EXPIRES_MINUTES
+### MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY
 
-- **Description:** The expiration time (in minutes) for the JWT access token.
-- **Example:** `JWT_ACCESS_TOKEN_EXPIRES_MINUTES=30`
+- **Description:** Path to the directory where client public keys are stored for JWT validation.
+- **Example:** `MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY=keys/public_keys`
 
-### SESSION_TYPE
+### MEMBRANE_SERVER_PRIVATE_KEY
 
-- **Description:** Specifies where to store the session data. Options can include 'filesystem', 'redis', 'memcached', etc.
-- **Example:** `SESSION_TYPE=filesystem`
+- **Description:** Path to the server's private key file used for creating and signing tokens.
+- **Example:** `MEMBRANE_SERVER_PRIVATE_KEY=keys/server_private.pem`
 
-### CLIENT_PUBLIC_KEYS_DIRECTORY
+### MEMBRANE_SERVER_PUBLIC_KEY
 
-- **Description:** Path to the directory where client public keys are stored. These keys are used for JWT validation.
-- **Example:** `CLIENT_PUBLIC_KEYS_DIRECTORY=keys/public_keys`
+- **Description:** Path to the server's public key file used for verifying tokens.
+- **Example:** `MEMBRANE_SERVER_PUBLIC_KEY=keys/server_public.pem`
 
-### SERVER_PRIVATE_KEY
+### MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS
 
-- **Description:** Path to the server's private key file. This key is used for creating and signing tokens.
-- **Example:** `SERVER_PRIVATE_KEY=keys/server_private.pem`
+- **Description:** Expiration time (in minutes) for the JWT access token.
+- **Example:** `MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS=30`
 
-### SERVER_PUBLIC_KEY
+### MEMBRANE_JWT_EXPIRE_SECONDS
 
-- **Description:** Path to the server's public key file. This key is used for verifying tokens.
-- **Example:** `SERVER_PUBLIC_KEY=keys/server_public.pem`
+- **Description:** General JWT expiration time in minutes.
+- **Example:** `MEMBRANE_JWT_EXPIRE_SECONDS=60`
 
-### SESSION_LIFETIME_MINUTES
+### MEMBRANE_SESSION_LIFETIME_SECONDS
 
 - **Description:** Duration (in minutes) after which the session will expire.
-- **Example:** `SESSION_LIFETIME_MINUTES=30`
+- **Example:** `MEMBRANE_SESSION_LIFETIME_SECONDS=30`
 
-### REDIRECT_URL_TO_LOUIS_FRONTEND
+### MEMBRANE_SESSION_TYPE
 
-- **Description:** The URL to which the Louis login backend will redirect users, leading them to the Louis login frontend where they can provide an email address.
-- **Example:** `REDIRECT_URL_TO_LOUIS_FRONTEND=https://login.louisfrontend.com/`
+- **Description:** Specifies the storage for session data. Options: 'filesystem', 'redis', 'memcached', etc.
+- **Example:** `MEMBRANE_SESSION_TYPE=filesystem`
+
+### MEMBRANE_LOGGING_LEVEL
+
+- **Description:** Specifies the logging level for the application.
+- **Example:** `MEMBRANE_LOGGING_LEVEL=INFO`
+
+### MEMBRANE_ALLOWED_EMAIL_DOMAINS
+
+- **Description:** List of email domains accepted by the application.
+- **Format:** Comma-separated list of domains.
+- **Example:** `MEMBRANE_ALLOWED_EMAIL_DOMAINS=gc.ca,canada.ca`
+
+### MEMBRANE_COMM_CONNECTION_STRING
+
+- **Description:** Connection string for the email service.
+- **Example:** `MEMBRANE_COMM_CONNECTION_STRING=smtp://example.com:587`
+
+### MEMBRANE_SENDER_EMAIL
+
+- **Description:** Email address that will send emails.
+- **Example:** `MEMBRANE_SENDER_EMAIL=noreply@example.com`
+
+### MEMBRANE_EMAIL_SUBJECT
+
+- **Description:** Subject line for outgoing emails.
+- **Example:** `MEMBRANE_EMAIL_SUBJECT=Your Subject Here`
+
+### MEMBRABE_EMAIL_SEND_SUCCESS
+
+- **Description:** Indicates if the email was sent successfully.
+- **Example:** `MEMBRABE_EMAIL_SEND_SUCCESS=true`
+
+### MEMBRANE_FRONTEND
+
+- **Description:** Redirect URL leading users to the login frontend.
+- **Example:** `MEMBRANE_FRONTEND=https://login.membranefrontend.com/`
+
+### MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME
+
+- **Description:** Time to wait (in seconds) while polling for email sending status.
+- **Example:** `MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME=10`
+
+### MEMBRANE_EMAIL_SEND_HTLM_TEMPLATE
+
+- **Description:** Path to the HTML template used for outgoing emails.
+- **Example:** `MEMBRANE_EMAIL_SEND_HTLM_TEMPLATE=\<html>\<h1>{}\</h1>\</html>
+
+### MEMBRANE_TOKEN_BLACKLIST
+
+- **Description:** List of revoked tokens or sessions for security.
+- **Format:** Comma-separated list of tokens.
+- **Example:** `MEMBRANE_TOKEN_BLACKLIST=token1,token2`
 
 Once you have defined all these variables, save and close the `.env` file. The Quart application will now use these environment variable values when it runs.
 
@@ -131,63 +183,81 @@ You can now interact with both the main Quart application and the client simulat
 
 ## Running the app from dockerfile
 
-### Generate Server and Client Keys
+### 1. Generate Server, Client Keys, and Environment Files
 
 #### Prerequisites
 
 - OpenSSL installed on your machine (in WSL).
+- An Azure Communication Service connection string
+- An Azure MailFrom email address connected to the Azure Communication Service resource
 
 #### Steps
 
 1. Navigate to the project's root directory.
-2. Run the following script:
+2. Run the initialization script:
 
    ```bash
-   ./generate_keys.sh testapp1
+   ./init_project.sh <your-test-app-id>
    ```
 
-   This will generate four `.pem` files in a folder called `keys`:
+   This script will:
 
-   - `server_private_key.pem`
-   - `server_public_key.pem`
-   - `testapp1_private_key.pem`
-   - `testapp1_public_key.pem`
+   - Generate keys in a `keys` folder for both the server and the specified app id.
+   - Copy `.env.template` to `.env`.
+   - Copy `.env.tests.template` to `.env.tests`.
 
 #### Note
 
-- If the keys already exist, the script will overwrite them.
+- If the keys or environment files already exist, the script will overwrite them.
+- Logs are written to `init.log`.
 
-### Configure environment variables
+### 2. Configure Environment Variables
 
-1. Create a .env file in the project's root directory.
+1. Open the `.env` file generated in the project's root directory.
 2. Generate a secret key:
 
-```bash
-openssl rand -hex 32
-```
+   ```bash
+   openssl rand -hex 32
+   ```
 
-3. Add the following variables:
+3. Populate the following variables in the `.env` file:
 
-```
-ALLOWED_EMAIL_DOMAINS=gc.ca
-SECRET_KEY=<your_secret_key_here>
-JWT_ACCESS_TOKEN_EXPIRES_MINUTES=2
-SESSION_TYPE=filesystem
-CLIENT_PUBLIC_KEYS_DIRECTORY=keys/
-SERVER_PRIVATE_KEY=keys/server_private_key.pem
-SERVER_PUBLIC_KEY=keys/server_public_key.pem
-SESSION_LIFETIME_MINUTES=4
-REDIRECT_URL_TO_LOUIS_FRONTEND=http://localhost:3000
-```
+   ```
+   # CORS settings
+   MEMBRANE_ALLOWED_ORIGINS=#comma separated urls to connected frontends
 
-4. Replace `<your_secret_key_here>` with the generated key from step 2.
+   # Frontend
+   MEMBRANE_FRONTEND=#the membrane frontend url
 
-### Running the App
+   # Secrets and Keys
+   MEMBRANE_SECRET_KEY=#your secret key generated at step 2
+   MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY=keys/
+   MEMBRANE_SERVER_PRIVATE_KEY=keys/server_private_key.pem
+   MEMBRANE_SERVER_PUBLIC_KEY=keys/server_public_key.pem
+
+   # JWT and Session settings
+   MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS=4
+   MEMBRANE_JWT_EXPIRE_SECONDS=4
+   MEMBRANE_SESSION_LIFETIME_SECONDS=4
+   MEMBRANE_SESSION_TYPE=null
+
+   # Logging and Debugging
+   MEMBRANE_LOGGING_LEVEL=DEBUG
+
+   # Email settings
+   MEMBRANE_ALLOWED_EMAIL_DOMAINS=gc.ca,canada.ca,inspection.gc.ca
+   MEMBRANE_COMM_CONNECTION_STRING=#your azure communication service connection string
+   MEMBRANE_SENDER_EMAIL=#your azure mailfrom email address
+   MEMBRANE_EMAIL_SUBJECT=Please Verify Your Email Address
+   MEMBRABE_EMAIL_SEND_SUCCESS=Valid email address. Email sent with JWT link
+   ```
+
+### 3. Running the App with Docker
 
 1. Build the Docker image:
 
    ```bash
-   docker build -t quart-app .
+   docker build -t your_app_name .
    ```
 
 2. Set your desired port number:
@@ -199,9 +269,5 @@ REDIRECT_URL_TO_LOUIS_FRONTEND=http://localhost:3000
 3. Run the Docker container:
 
    ```bash
-   docker run -v ./keys:/app/keys -p $PORT:$PORT -e PORT=$PORT --env-file .env quart-app
+   docker run -v $(pwd)/keys:/app/keys -p $PORT:$PORT -e PORT=$PORT --env-file .env your_app_name
    ```
-
-#### Note
-
-- Replace `<your_port_here>` with the port number you wish to use for the application.

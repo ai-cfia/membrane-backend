@@ -97,14 +97,14 @@ async def sample_verification_token(app):
 
 @pytest.fixture(scope="session")
 def azure_conn_string():
-    return os.getenv("MEMBRANE_BACKEND_COMM_CONNECTION_STRING")
+    return os.getenv("MEMBRANE_COMM_CONNECTION_STRING")
 
 
 @pytest.fixture(scope="session")
 def sender_email():
-    return os.getenv("MEMBRANE_BACKEND_SENDER_EMAIL")
+    return os.getenv("MEMBRANE_SENDER_EMAIL")
 
 
 @pytest.fixture(scope="session")
 def receiver_email():
-    return os.getenv("MEMBRANE_BACKEND_RECEIVER_EMAIL")
+    return os.getenv("MEMBRANE_RECEIVER_EMAIL")

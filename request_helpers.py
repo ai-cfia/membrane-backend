@@ -17,7 +17,7 @@ class InvalidTokenError(TokenError):
 
 def is_valid_email(email):
     """Check if the provided email is valid."""
-    allowed_domains = os.getenv('ALLOWED_EMAIL_DOMAINS', '')
+    allowed_domains = os.getenv('MEMBRANE_ALLOWED_EMAIL_DOMAINS', '')
     allowed_domains = '|'.join([re.escape(domain.strip()) for domain in allowed_domains.split(',')])
     pattern = r'^[a-zA-Z0-9._%+-]+@(?:' + allowed_domains + ')$'
 

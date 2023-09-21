@@ -10,7 +10,7 @@ def setup_module(module):
     Setup for the test module.
     Setting the ALLOWED_EMAIL_DOMAINS environment variable for testing.
     """
-    os.environ['ALLOWED_EMAIL_DOMAINS'] = 'gc.ca,canada.ca,inspection.gc.ca'
+    os.environ['MEMBRANE_ALLOWED_EMAIL_DOMAINS'] = 'gc.ca,canada.ca,inspection.gc.ca'
 
 def test_valid_email_from_allowed_domain():
     """

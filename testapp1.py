@@ -10,10 +10,10 @@ from generate_jwt import generate_jwt
 app = Quart(__name__)
 
 # Generate a secret key for the session cookie
-SECRET_KEY = os.getenv("SECRET_KEY", str(uuid.uuid4()))
+SECRET_KEY = os.getenv("MEMBRANE_SECRET_KEY", str(uuid.uuid4()))
 app.secret_key = SECRET_KEY
 
-session_lifetime_minutes = int(os.environ.get("SESSION_LIFETIME_MINUTES", 30))
+session_lifetime_minutes = int(os.getenv("MEMBRANE_SESSION_LIFETIME_SECONDS", 30))
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=session_lifetime_minutes)
 
 
@@ -51,10 +51,14 @@ async def hello_world():
             "app_id": "testapp1",
             "redirect_url": url_for("hello_world", _external=True),
         }
-        jwt_token = generate_jwt(data, private_key_content)
+        jwt_token = generate_jwt(
+            data,
+            private_key_content,
+            {"alg": "RS256", "typ": "JWT", "app_id": "testapp1"},
+        )
         # Redirect to /authenticate with the generated JWT token
         print("Generate JWT token AND SENT OUT")
-        return redirect(f"http://127.0.0.1:5001/authenticate?token={jwt_token}")
+        return redirect(f"http://127.0.0.1:5000/authenticate?token={jwt_token}")
 
     # If there is a JWT token, validate and decode it
     with open("keys/server_public_key.pem", "rb") as file:
