@@ -3,7 +3,7 @@ name: Docker GCP deployment
 on:
   push:
     branches:
-      - github-action-workflow
+      - reda97/issue19
   workflow_dispatch:
 
 jobs:
