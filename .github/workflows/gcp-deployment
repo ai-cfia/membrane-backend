@@ -3,7 +3,7 @@ name: Docker GCP deployment
 on:
   push:
     branches:
-      - reda97/issue19
+      - redat97/issue19
   workflow_dispatch:
 
 jobs:
