@@ -3,7 +3,6 @@ CFIA Louis Backend Quart Application
 """
 import traceback
 
-from pyparsing import html_comment
 from quart import jsonify, request
 
 from app_create import create_app
@@ -33,7 +32,7 @@ async def log_request_info():
 
 @app.get("/ping")
 async def ping():
-    return "<html><body><h1>server is running</h1><body/><html/>"
+    return "ok", 200
 
 
 @app.route("/authenticate", methods=["GET", "POST"])
@@ -79,12 +78,12 @@ async def authenticate():
                 app.config["MEMBRANE_EMAIL_SUBJECT"],
                 verification_url,
                 app.logger,
-                app.config["MEMBRANE_EMAIL_SEND_HTLM_TEMPLATE"],
+                app.config["MEMBRANE_EMAIL_SEND_HTML_TEMPLATE"],
                 app.config["MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME"],
             )
 
             return (
-                jsonify({"message": app.config["MEMBRABE_EMAIL_SEND_SUCCESS"]}),
+                jsonify({"message": app.config["MEMBRANE_EMAIL_SEND_SUCCESS"]}),
                 200,
             )
         else:

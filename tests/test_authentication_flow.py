@@ -111,7 +111,7 @@ async def test_valid_verification_token_returns_302_found(
 ):
     """Test the scenario where the request only contains a valid client JWT without an email"""
     response = await test_client.get(await sample_verification_token)
-    print(response)
+    print("test_valid_verification_token_returns_302_found", response)
     # If the request contains a valid email verification token, ...
     # ... then redirect the user to client applicaiton.
     assert response.status_code == 302

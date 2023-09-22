@@ -13,8 +13,8 @@ app = Quart(__name__)
 SECRET_KEY = os.getenv("MEMBRANE_SECRET_KEY", str(uuid.uuid4()))
 app.secret_key = SECRET_KEY
 
-session_lifetime_minutes = int(os.getenv("MEMBRANE_SESSION_LIFETIME_SECONDS", 30))
-app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=session_lifetime_minutes)
+session_lifetime_seconds = int(os.getenv("MEMBRANE_SESSION_LIFETIME_SECONDS", 30))
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(seconds=session_lifetime_seconds)
 
 
 def decode_jwt_token(jwt_token, public_key):
@@ -29,8 +29,8 @@ def decode_jwt_token(jwt_token, public_key):
         return None
 
 
-@app.route("/health")
-async def health_check():
+@app.route("/ping")
+async def ping():
     return "ok", 200
 
 

@@ -89,7 +89,7 @@ async def sample_verification_token(app):
         verification_url = generate_email_verification_token(
             "test@inspection.gc.ca",
             "https://www.example.com/",
-            int(30),
+            int(5*60),
             SERVER_PRIVATE_KEY,
         )
     return verification_url

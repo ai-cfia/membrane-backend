@@ -214,13 +214,13 @@ def decode_email_verification_token(jwt_token, server_public_key_path, token_bla
 
 
 def generate_email_verification_token(
-    email, redirect_url, expiration_minutes, server_private_key_path
+    email, redirect_url, expiration_seconds, server_private_key_path
 ):
     """
     Generate an email verification token and the corresponding verification URL.
     """
     # Generate token expiration timestamp.
-    expiration_time = datetime.utcnow() + timedelta(minutes=expiration_minutes)
+    expiration_time = datetime.utcnow() + timedelta(seconds=expiration_seconds)
     expiration_timestamp = int(expiration_time.timestamp())
 
     # Token payload.

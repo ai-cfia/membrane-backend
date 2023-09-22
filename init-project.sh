@@ -12,7 +12,7 @@ fi
 APPID=$1
 
 # Create keys directory if it doesn't exist
-mkdir -p keys >> init.log 2>&1
+mkdir -p keys
 
 # Generate server keys
 openssl genpkey -algorithm RSA -out keys/server_private_key.pem >> init.log 2>&1

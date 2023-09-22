@@ -60,8 +60,8 @@ Now, define each of the following variables:
 ### MEMBRANE_ALLOWED_ORIGINS
 
 - **Description:** List of origins allowed for cross-origin requests (CORS).
-- **Format:** Comma-separated list of domains.
-- **Example:** `MEMBRANE_ALLOWED_ORIGINS=http://example.com,https://example2.com`
+- **Format:** Comma-separated list of origins.
+- **Example:** `MEMBRANE_ALLOWED_ORIGINS=<membrane-frontend--link>`
 
 ### MEMBRANE_SECRET_KEY
 
@@ -85,17 +85,17 @@ Now, define each of the following variables:
 
 ### MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS
 
-- **Description:** Expiration time (in minutes) for the JWT access token.
+- **Description:** Expiration time (in seconds) for the JWT access token.
 - **Example:** `MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS=30`
 
 ### MEMBRANE_JWT_EXPIRE_SECONDS
 
-- **Description:** General JWT expiration time in minutes.
+- **Description:** General JWT expiration time in seconds.
 - **Example:** `MEMBRANE_JWT_EXPIRE_SECONDS=60`
 
 ### MEMBRANE_SESSION_LIFETIME_SECONDS
 
-- **Description:** Duration (in minutes) after which the session will expire.
+- **Description:** Duration (in seconds) after which the session will expire.
 - **Example:** `MEMBRANE_SESSION_LIFETIME_SECONDS=30`
 
 ### MEMBRANE_SESSION_TYPE
@@ -129,10 +129,10 @@ Now, define each of the following variables:
 - **Description:** Subject line for outgoing emails.
 - **Example:** `MEMBRANE_EMAIL_SUBJECT=Your Subject Here`
 
-### MEMBRABE_EMAIL_SEND_SUCCESS
+### MEMBRANE_EMAIL_SEND_SUCCESS
 
 - **Description:** Indicates if the email was sent successfully.
-- **Example:** `MEMBRABE_EMAIL_SEND_SUCCESS=true`
+- **Example:** `MEMBRANE_EMAIL_SEND_SUCCESS=Email sent with JWT link`
 
 ### MEMBRANE_FRONTEND
 
@@ -144,10 +144,10 @@ Now, define each of the following variables:
 - **Description:** Time to wait (in seconds) while polling for email sending status.
 - **Example:** `MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME=10`
 
-### MEMBRANE_EMAIL_SEND_HTLM_TEMPLATE
+### MEMBRANE_EMAIL_SEND_HTML_TEMPLATE
 
 - **Description:** Path to the HTML template used for outgoing emails.
-- **Example:** `MEMBRANE_EMAIL_SEND_HTLM_TEMPLATE=\<html>\<h1>{}\</h1>\</html>
+- **Example:** `MEMBRANE_EMAIL_SEND_HTML_TEMPLATE=\<html>\<h1>{}\</h1>\</html>
 
 ### MEMBRANE_TOKEN_BLACKLIST
 
@@ -249,7 +249,7 @@ You can now interact with both the main Quart application and the client simulat
    MEMBRANE_COMM_CONNECTION_STRING=#your azure communication service connection string
    MEMBRANE_SENDER_EMAIL=#your azure mailfrom email address
    MEMBRANE_EMAIL_SUBJECT=Please Verify Your Email Address
-   MEMBRABE_EMAIL_SEND_SUCCESS=Valid email address. Email sent with JWT link
+   MEMBRANE_EMAIL_SEND_SUCCESS=Valid email address. Email sent with JWT link
    ```
 
 ### 3. Running the App with Docker
@@ -263,11 +263,15 @@ You can now interact with both the main Quart application and the client simulat
 2. Set your desired port number:
 
    ```bash
-   export PORT=<your_port_here>
+   export PORT=<your_port_here> WORKERS=<number_of_workers> KEEP_ALIVE=<keep-alive-seconds>
    ```
 
 3. Run the Docker container:
-
    ```bash
-   docker run -v $(pwd)/keys:/app/keys -p $PORT:$PORT -e PORT=$PORT --env-file .env your_app_name
+   docker run -v $(pwd)/keys:/app/keys -p $PORT:$PORT \
+      -e SERVER_PORT=$PORT \
+      -e SERVER_WORKERS=$WORKERS \
+      -e SERVER_KEEP_ALIVE=$KEEP_ALIVE \
+      --env-file .env \
+      your_app_name
    ```

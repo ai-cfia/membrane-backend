@@ -51,7 +51,7 @@ def create_app():
             == "true",
             "SESSION_TYPE": os.getenv("MEMBRANE_SESSION_TYPE", "filesystem"),
             "MEMBRANE_TOKEN_BLACKLIST": set(
-                os.getenv("TOKEN_BLACKLIST", "").split(",")
+                os.getenv("MEMBRANE_TOKEN_BLACKLIST", "").split(",")
             ),
             "MEMBRANE_LOGGING_LEVEL": os.getenv("MEMBRANE_LOGGING_LEVEL", "DEBUG"),
             "MEMBRANE_ALLOWED_EMAIL_DOMAINS": os.getenv(
@@ -62,9 +62,9 @@ def create_app():
             ),
             "MEMBRANE_SENDER_EMAIL": os.getenv("MEMBRANE_SENDER_EMAIL", ""),
             "MEMBRANE_EMAIL_SUBJECT": os.getenv("MEMBRANE_EMAIL_SUBJECT", ""),
-            "MEMBRABE_EMAIL_SEND_SUCCESS": os.getenv("MEMBRABE_EMAIL_SEND_SUCCESS", ""),
-            "MEMBRANE_EMAIL_SEND_HTLM_TEMPLATE": os.getenv(
-                "MEMBRANE_EMAIL_SEND_HTLM_TEMPLATE", ""
+            "MEMBRANE_EMAIL_SEND_SUCCESS": os.getenv("MEMBRANE_EMAIL_SEND_SUCCESS", ""),
+            "MEMBRANE_EMAIL_SEND_HTML_TEMPLATE": os.getenv(
+                "MEMBRANE_EMAIL_SEND_HTML_TEMPLATE", ""
             ),
             "MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME": int(
                 os.getenv("MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME", "")
@@ -82,8 +82,10 @@ def create_app():
     app = cors(
         app, allow_origin=app.config["MEMBRANE_ALLOWED_ORIGINS"], allow_credentials=True
     )
-
-    logging.basicConfig(level=getattr(logging, app.config["MEMBRANE_LOGGING_LEVEL"]))
+    logging.basicConfig(
+        format="[%(asctime)s] [%(levelname)s] [%(filename)s:%(lineno)d:%(funcName)s] - %(message)s",
+        level=getattr(logging, app.config["MEMBRANE_LOGGING_LEVEL"]),
+    )
 
     Session(app)
     return app
