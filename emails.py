@@ -3,19 +3,23 @@ from logging import Logger
 from azure.communication.email import EmailClient
 
 
-class EmailSendingFailedError(Exception):
+class EmailsException(Exception):
+    """Base class for all email-related exceptions."""
+
+
+class EmailSendingFailedError(EmailsException):
     """Custom Exception for email sending errors."""
 
 
-class PollingTimeoutError(Exception):
+class PollingTimeoutError(EmailsException):
     """Custom Exception for polling time-out during email sending."""
 
 
-class InvalidConnectionStringError(Exception):
+class InvalidConnectionStringError(EmailsException):
     """Custom Exception for invalid connection strings."""
 
 
-class UnexpectedEmailSendError(Exception):
+class UnexpectedEmailSendError(EmailsException):
     """Custom Exception for unexpected errors."""
 
 
@@ -45,7 +49,7 @@ def send_email(
     - dict: A dictionary containing the operation status and ID if successful.
 
     Raises:
-    - EmailSendingError: If email sending process fails, times out or if any unexpected
+    - EmailsException: If email sending process fails, times out or if any unexpected
     error occurs.
     """
 
@@ -91,10 +95,11 @@ def send_email(
         else:
             raise EmailSendingFailedError(result["error"], None)
 
-    except (PollingTimeoutError, EmailSendingFailedError) as e:
+    except EmailsException as e:
         logger.exception(e)
         raise
     except ValueError as e:
+        logger.exception(e)
         raise InvalidConnectionStringError("Invalid connection string.") from e
     except Exception as e:
         logger.exception(e)
