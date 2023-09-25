@@ -20,7 +20,6 @@ def app():
     """Quart application fixture for the tests."""
     quart_app.config["SESSION_TYPE"] = os.getenv("MEMBRANE_SESSION_TYPE")
     quart_app.config["TESTING"] = True
-    quart_app.config["SERVER_NAME"] = "whaterver"
     yield quart_app
     # # pylint: disable=redefined-outer-name
 
