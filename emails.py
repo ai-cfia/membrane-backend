@@ -11,6 +11,10 @@ class PollingTimeoutError(Exception):
     """Custom Exception for polling time-out during email sending."""
 
 
+class InvalidConnectionStringError(Exception):
+    """Custom Exception for invalid connection strings."""
+
+
 class UnexpectedEmailSendError(Exception):
     """Custom Exception for unexpected errors."""
 
@@ -51,25 +55,25 @@ def send_email(
         f"subject: {subject}, body: {body}, "
         f"html_content: {html_content}, poller_wait_time: {poller_wait_time}"
     )
-    email_client = EmailClient.from_connection_string(connection_string)
-
-    message = {
-        "content": {
-            "subject": subject,
-            "plainText": body,
-            "html": html_content.format(body)
-            if html_content
-            else f"<html><h1>{body}</h1></html>",
-        },
-        "recipients": {"to": [{"address": recipient_email}]},
-        "senderAddress": sender_email,
-    }
-
-    if not poller_wait_time:
-        poller_wait_time = 10
-    time_elapsed = 0
-
     try:
+        email_client = EmailClient.from_connection_string(connection_string)
+
+        message = {
+            "content": {
+                "subject": subject,
+                "plainText": body,
+                "html": html_content.format(body)
+                if html_content
+                else f"<html><h1>{body}</h1></html>",
+            },
+            "recipients": {"to": [{"address": recipient_email}]},
+            "senderAddress": sender_email,
+        }
+
+        if not poller_wait_time:
+            poller_wait_time = 10
+        time_elapsed = 0
+
         poller = email_client.begin_send(message)
 
         while not poller.done():
@@ -90,8 +94,8 @@ def send_email(
     except (PollingTimeoutError, EmailSendingFailedError) as e:
         logger.exception(e)
         raise
+    except ValueError as e:
+        raise InvalidConnectionStringError("Invalid connection string.") from e
     except Exception as e:
         logger.exception(e)
-        raise UnexpectedEmailSendError(
-            f"An unexpected error occurred: {str(e)}", e
-        ) from e
+        raise UnexpectedEmailSendError(f"An unexpected error occurred: {e}") from e

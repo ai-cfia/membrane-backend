@@ -2,6 +2,7 @@
 Utilities for encoding, decoding, and validating JWT tokens.
 """
 import logging
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -52,38 +53,43 @@ def decode_client_jwt_token(jwt_token, keys_directory: Path):
     """
     if not jwt_token:
         raise JWTError("No JWT token provided in query parameters.")
-
-    # Temporarily decode the token to fetch the app_id
-    unverified_decoded_token = decode(jwt_token, options={"verify_signature": False})
-    if "app_id" not in unverified_decoded_token:
-        raise JWTAppIdMissingError("No app_id in JWT payload.")
-
-    app_id = unverified_decoded_token["app_id"]
-
-    # Look for a corresponding public key file
-    public_key_path = keys_directory / f"{app_id}_public_key.pem"
-
-    if not public_key_path.exists():
-        raise JWTPublicKeyNotFoundError(f"Public key not found for app_id: {app_id}.")
-
-    with public_key_path.open("r") as key_file:
-        public_key = key_file.read()
-
     try:
+        app_id_field = os.getenv("MEMBRANE_APP_ID_FIELD")
+        redirect_url_field = os.getenv("MEMBRANE_REDIRECT_URL_FIELD")
+        algorithm = os.getenv("MEMBRANE_ENCODE_ALGORITHM")
+
+        # Temporarily decode the token to fetch the app_id
+        unverified_decoded_token = decode(
+            jwt_token, options={"verify_signature": False}
+        )
+        if app_id_field not in unverified_decoded_token:
+            raise JWTAppIdMissingError("No app id in JWT payload.")
+
+        app_id = unverified_decoded_token[app_id_field]
+
+        # Look for a corresponding public key file
+        public_key_path = keys_directory / f"{app_id}_public_key.pem"
+
+        if not public_key_path.exists():
+            raise JWTPublicKeyNotFoundError(
+                f"Public key not found for app_id: {app_id} {unverified_decoded_token}."
+            )
+
+        with public_key_path.open("r") as key_file:
+            public_key = key_file.read()
+
         # Decode the token using the fetched public key
-        decoded_token = decode(jwt_token, public_key, algorithms=["RS256"])
+        decoded_token = decode(jwt_token, public_key, algorithms=[algorithm])
         # Retrieve the redirect URL.
-        redirect_url = decoded_token["redirect_url"]
+        redirect_url = decoded_token[redirect_url_field]
         if not redirect_url:
             raise JWTError("No redirect URL found in Token.")
 
-        expired_time = decoded_token["exp"]
+        expired_time = decoded_token[os.getenv("MEMBRANE_EXPIRATION_FIELD")]
 
         # Get current time
         current_time = datetime.utcnow()
-        current_timestamp = int(
-            current_time.timestamp()
-        )  # Convert datetime to timestamp
+        current_timestamp = int(current_time.timestamp())
 
         # Check for token expiration
         if current_timestamp > expired_time:
@@ -96,27 +102,27 @@ def decode_client_jwt_token(jwt_token, keys_directory: Path):
 
 
 def login_redirect_with_client_jwt(
-    clientapp_token, client_public_keys_directory, redirect_url_to_louis_frontend
+    clientapp_token, client_public_keys_directory, membrane_frontend
 ):
     """
-    Validates the client application token and redirects to the Louis Login Frontend.
+    Validates the client application token and redirects to the Membrane Frontend.
 
     Args:
         clientapp_token (str): The JWT token provided by the client application.
-        client_public_keys_directory (Path): Path to the directory containing client public keys.
-        redirect_url_to_louis_frontend (str): The URL for redirecting to the Louis Login Frontend.
+        client_public_keys_directory (Path): Path to the directory containing client
+        public keys.
+        membrane_frontend (str): The URL for redirecting to the membrane Frontend.
 
     Returns:
-        Response: A redirection response to the Louis Login Frontend with the token as a parameter.
+        Response: A redirection response to the Membrane Frontend with the token as
+        a parameter.
 
     Raises:
         InvalidClientTokenError: If the token validation or decoding fails.
     """
     try:
         decode_client_jwt_token(clientapp_token, client_public_keys_directory)
-        redirect_url_with_token = (
-            f"{redirect_url_to_louis_frontend}?token={clientapp_token}"
-        )
+        redirect_url_with_token = f"{membrane_frontend}?token={clientapp_token}"
         return redirect(redirect_url_with_token)
     except Exception as error:
         logging.error("Failed to decode client application token: %s", error)
@@ -129,9 +135,9 @@ def process_email_verification_token(email_token, server_public_key, token_black
     """
     Processes a token from an email verification URL.
 
-    The function decodes the given email token, validates its authenticity, and adds it to a
-    blacklist to prevent reuse. Upon successful validation, a redirection is performed based
-    on the decoded token's information.
+    The function decodes the given email token, validates its authenticity, and adds it
+    to a blacklist to prevent reuse. Upon successful validation, a redirection is
+    performed based on the decoded token's information.
 
     Args:
         email_token (str): The JWT token from the email verification URL.
@@ -154,8 +160,9 @@ def process_email_verification_token(email_token, server_public_key, token_black
         token_blacklist.add(email_token)
 
         # Construct the redirect URL using the decoded information and redirect
+        redirect_url_field = os.getenv("MEMBRANE_REDIRECT_URL_FIELD")
         email_token_redirect = (
-            f"{decoded_email_token['redirect_url']}?token={email_token}"
+            f"{decoded_email_token[redirect_url_field]}?token={email_token}"
         )
         return redirect(email_token_redirect, code=302)
 
@@ -171,7 +178,8 @@ def decode_email_verification_token(jwt_token, server_public_key_path, token_bla
 
     Args:
         jwt_token (str): The JWT token to decode.
-        server_public_key_path (Path): Path to the server's public key for token decoding.
+        server_public_key_path (Path): Path to the server's public key for token
+        decoding.
         token_blacklist (set): A set of blacklisted tokens.
 
     Returns:
@@ -180,8 +188,6 @@ def decode_email_verification_token(jwt_token, server_public_key_path, token_bla
     Raises:
         JWTError: For various JWT-related issues.
     """
-    print("Entering decode_email_verification_token function")
-
     if not jwt_token:
         raise JWTError("No JWT token provided in query parameters.")
 
@@ -194,15 +200,17 @@ def decode_email_verification_token(jwt_token, server_public_key_path, token_bla
         public_key = key_file.read()
 
     try:
+        algorithm = os.getenv("MEMBRANE_ENCODE_ALGORITHM")
+        redirect_url_field = os.getenv("MEMBRANE_REDIRECT_URL_FIELD")
         # Decode the token using the provided public key.
-        decoded_token = decode(jwt_token, public_key, algorithms=["RS256"])
+        decoded_token = decode(jwt_token, public_key, algorithms=[algorithm])
 
         # Check redirect URL existence.
-        if "redirect_url" not in decoded_token:
+        if redirect_url_field not in decoded_token:
             raise JWTError("No redirect URL found in token.")
 
         # Check token expiration.
-        expired_time = decoded_token["exp"]
+        expired_time = decoded_token[os.getenv("MEMBRANE_EXPIRATION_FIELD")]
         current_time = datetime.utcnow()
         if current_time.timestamp() > expired_time:
             raise JWTExpired("JWT token has expired.")
@@ -220,11 +228,17 @@ def generate_email_verification_token(
     Generate an email verification token and the corresponding verification URL.
     """
     # Generate token expiration timestamp.
+    redirect_url_field = os.getenv("MEMBRANE_REDIRECT_URL_FIELD")
+    expiration_field = os.getenv("MEMBRANE_EXPIRATION_FIELD")
     expiration_time = datetime.utcnow() + timedelta(seconds=expiration_seconds)
     expiration_timestamp = int(expiration_time.timestamp())
 
     # Token payload.
-    payload = {"sub": email, "redirect_url": redirect_url, "exp": expiration_timestamp}
+    payload = {
+        "sub": email,
+        redirect_url_field: redirect_url,
+        expiration_field: expiration_timestamp,
+    }
 
     # Encode email token using the server's dedicated private key.
     email_token = encode_email_verification_token(payload, server_private_key_path)
@@ -257,7 +271,8 @@ def encode_email_verification_token(payload, server_private_key_path):
         private_key = key_file.read()
 
     try:
-        jwt_token = encode(payload, private_key, algorithm="RS256")
+        algorithm = os.getenv("MEMBRANE_ENCODE_ALGORITHM")
+        jwt_token = encode(payload, private_key, algorithm=algorithm)
         return jwt_token
     except Exception as error:
         raise JWTError(f"Failed to encode JWT token. Error: {error}") from error
@@ -278,10 +293,9 @@ def redirect_to_client_app_using_verification_token(
         Response: A redirection response based on the decoded token's information.
 
     Raises:
-        InvalidEmailTokenError: If there's an issue with the token's validation or decoding.
+        InvalidEmailTokenError: If there's an issue with the token's validation or
+        decoding.
     """
-    print("Entering redirect_to_client_app_using_verification_token function")
-
     try:
         # Attempt to decode the client application's email token
         return process_email_verification_token(
@@ -296,10 +310,11 @@ def redirect_to_client_app_using_verification_token(
     # If blacklisted or any other error, handle the token without using the blacklist.
     # This is return user to client application to restart SSO.
     try:
+        redirect_url_field = os.getenv("MEMBRANE_REDIRECT_URL_FIELD")
         verification_decoded_token = decode_email_verification_token(
             verification_token, server_public_key, {}
         )
-        return redirect(verification_decoded_token["redirect_url"])
+        return redirect(verification_decoded_token[redirect_url_field])
     except (InvalidTokenError, BlacklistedTokenError) as error:
         raise InvalidEmailTokenError(
             "Failed to decode client application token."

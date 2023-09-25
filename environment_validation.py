@@ -8,7 +8,7 @@ def validate_environment_settings(
     - CLIENT_PUBLIC_KEYS_DIRECTORY (Path): The directory containing the client public keys.
     - SERVER_PRIVATE_KEY (Path): The path to the server's private key.
     - SERVER_PUBLIC_KEY (Path): The path to the server's public key.
-    - FRONTEND_URL (str): The redirect URL to the Louis frontend.
+    - FRONTEND_URL (str): The redirect URL to the membrane frontend.
 
     Returns:
     - True if all validations pass.
@@ -35,10 +35,10 @@ def validate_environment_settings(
             f"The specified server public key file {SERVER_PUBLIC_KEY} does not exist or is a directory. Please provide a valid path."
         )
 
-    # Check the redirect URL to Louis Frontend
+    # Check the redirect URL to Membrane Frontend
     if not FRONTEND_URL:
         raise ValueError(
-            "The redirect URL to Louis Frontend is not specified. Please provide a valid URL."
+            "The redirect URL to Membrane Frontend is not specified. Please provide a valid URL."
         )
 
     return True

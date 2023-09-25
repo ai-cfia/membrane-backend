@@ -61,99 +61,168 @@ Now, define each of the following variables:
 
 - **Description:** List of origins allowed for cross-origin requests (CORS).
 - **Format:** Comma-separated list of origins.
-- **Example:** `MEMBRANE_ALLOWED_ORIGINS=<membrane-frontend--link>`
-
-### MEMBRANE_SECRET_KEY
-
-- **Description:** The secret key used for creating encrypted tokens.
-- **Recommendation:** Generate a strong random value for this.
-
-### MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY
-
-- **Description:** Path to the directory where client public keys are stored for JWT validation.
-- **Example:** `MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY=keys/public_keys`
-
-### MEMBRANE_SERVER_PRIVATE_KEY
-
-- **Description:** Path to the server's private key file used for creating and signing tokens.
-- **Example:** `MEMBRANE_SERVER_PRIVATE_KEY=keys/server_private.pem`
-
-### MEMBRANE_SERVER_PUBLIC_KEY
-
-- **Description:** Path to the server's public key file used for verifying tokens.
-- **Example:** `MEMBRANE_SERVER_PUBLIC_KEY=keys/server_public.pem`
-
-### MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS
-
-- **Description:** Expiration time (in seconds) for the JWT access token.
-- **Example:** `MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS=30`
-
-### MEMBRANE_JWT_EXPIRE_SECONDS
-
-- **Description:** General JWT expiration time in seconds.
-- **Example:** `MEMBRANE_JWT_EXPIRE_SECONDS=60`
-
-### MEMBRANE_SESSION_LIFETIME_SECONDS
-
-- **Description:** Duration (in seconds) after which the session will expire.
-- **Example:** `MEMBRANE_SESSION_LIFETIME_SECONDS=30`
-
-### MEMBRANE_SESSION_TYPE
-
-- **Description:** Specifies the storage for session data. Options: 'filesystem', 'redis', 'memcached', etc.
-- **Example:** `MEMBRANE_SESSION_TYPE=filesystem`
+- **Example:** `MEMBRANE_ALLOWED_ORIGINS=http://localhost:3000`
 
 ### MEMBRANE_LOGGING_LEVEL
 
 - **Description:** Specifies the logging level for the application.
-- **Example:** `MEMBRANE_LOGGING_LEVEL=INFO`
+- **Example:** `MEMBRANE_LOGGING_LEVEL=DEBUG`
 
-### MEMBRANE_ALLOWED_EMAIL_DOMAINS
+### MEMBRANE_LOGGING_FORMAT
 
-- **Description:** List of email domains accepted by the application.
-- **Format:** Comma-separated list of domains.
-- **Example:** `MEMBRANE_ALLOWED_EMAIL_DOMAINS=gc.ca,canada.ca`
+- **Description:** Format for the log messages.
+- **Example:** `MEMBRANE_LOGGING_FORMAT=[%(asctime)s] [%(levelname)s] [%(filename)s:%(lineno)d:%(funcName)s] - %(message)s`
 
-### MEMBRANE_COMM_CONNECTION_STRING
+### MEMBRANE_HEALTH_MESSAGE
 
-- **Description:** Connection string for the email service.
-- **Example:** `MEMBRANE_COMM_CONNECTION_STRING=smtp://example.com:587`
+- **Description:** Health check message for the server.
+- **Example:** `MEMBRANE_HEALTH_MESSAGE=Ok`
 
-### MEMBRANE_SENDER_EMAIL
+### MEMBRABE_SERVER_NAME
 
-- **Description:** Email address that will send emails.
-- **Example:** `MEMBRANE_SENDER_EMAIL=noreply@example.com`
-
-### MEMBRANE_EMAIL_SUBJECT
-
-- **Description:** Subject line for outgoing emails.
-- **Example:** `MEMBRANE_EMAIL_SUBJECT=Your Subject Here`
-
-### MEMBRANE_EMAIL_SEND_SUCCESS
-
-- **Description:** Indicates if the email was sent successfully.
-- **Example:** `MEMBRANE_EMAIL_SEND_SUCCESS=Email sent with JWT link`
+- **Description:** The name of the server.
+- **Example:** `MEMBRABE_SERVER_NAME=membrane`
 
 ### MEMBRANE_FRONTEND
 
 - **Description:** Redirect URL leading users to the login frontend.
-- **Example:** `MEMBRANE_FRONTEND=https://login.membranefrontend.com/`
+- **Example:** `MEMBRANE_FRONTEND=http://localhost:3000`
 
-### MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME
+### MEMBRANE_SECRET_KEY
 
-- **Description:** Time to wait (in seconds) while polling for email sending status.
-- **Example:** `MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME=10`
+- **Description:** The secret key used for creating encrypted tokens.
+- **Example:** `MEMBRANE_SECRET_KEY=your_secret_key`
 
-### MEMBRANE_EMAIL_SEND_HTML_TEMPLATE
+### MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY
 
-- **Description:** Path to the HTML template used for outgoing emails.
-- **Example:** `MEMBRANE_EMAIL_SEND_HTML_TEMPLATE=\<html>\<h1>{}\</h1>\</html>
+- **Description:** Path to the directory where client public keys are stored for JWT validation.
+- **Example:** `MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY=keys/`
+
+### MEMBRANE_SERVER_PRIVATE_KEY
+
+- **Description:** Path to the server's private key file used for creating and signing tokens.
+- **Example:** `MEMBRANE_SERVER_PRIVATE_KEY=keys/server_private_key.pem`
+
+### MEMBRANE_SERVER_PUBLIC_KEY
+
+- **Description:** Path to the server's public key file used for verifying tokens.
+- **Example:** `MEMBRANE_SERVER_PUBLIC_KEY=keys/server_public_key.pem`
+
+### MEMBRANE_TEST_APP_PUBLIC_KEY
+
+- **Description:** Path to the test application's public key.
+- **Example:** `MEMBRANE_TEST_APP_PUBLIC_KEY=keys/testapp1_public_key.pem`
+
+### MEMBRANE_TEST_APP_PRIVATE_KEY
+
+- **Description:** Path to the test application's private key.
+- **Example:** `MEMBRANE_TEST_APP_PRIVATE_KEY=keys/testapp1_private_key.pem`
+
+### MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS
+
+- **Description:** Expiration time (in seconds) for the JWT access token.
+- **Example:** `MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS=300`
+
+### MEMBRANE_JWT_EXPIRE_SECONDS
+
+- **Description:** General JWT expiration time in seconds.
+- **Example:** `MEMBRANE_JWT_EXPIRE_SECONDS=300`
+
+### MEMBRANE_SESSION_LIFETIME_SECONDS
+
+- **Description:** Duration (in seconds) after which the session will expire.
+- **Example:** `MEMBRANE_SESSION_LIFETIME_SECONDS=300`
+
+### MEMBRANE_SESSION_COOKIE_SECURE
+
+- **Description:** Indicates if the session cookie should be secure.
+- **Example:** `MEMBRANE_SESSION_COOKIE_SECURE=true`
+
+### MEMBRANE_SESSION_TYPE
+
+- **Description:** Specifies the storage for session data. Options: 'filesystem', 'redis', 'memcached', etc.
+- **Example:** `MEMBRANE_SESSION_TYPE=null`
 
 ### MEMBRANE_TOKEN_BLACKLIST
 
 - **Description:** List of revoked tokens or sessions for security.
 - **Format:** Comma-separated list of tokens.
-- **Example:** `MEMBRANE_TOKEN_BLACKLIST=token1,token2`
+- **Example:** `MEMBRANE_TOKEN_BLACKLIST=`
+
+### MEMBRANE_APP_ID_FIELD
+
+- **Description:** Field name for the application ID in JWT.
+- **Example:** `MEMBRANE_APP_ID_FIELD=app_id`
+
+### MEMBRANE_DATA_FIELD
+
+- **Description:** Field name for data in JWT.
+- **Example:** `MEMBRANE_DATA_FIELD=data`
+
+### MEMBRANE_REDIRECT_URL_FIELD
+
+- **Description:** Field name for redirect URL in JWT.
+- **Example:** `MEMBRANE_REDIRECT_URL_FIELD=redirect_url`
+
+### MEMBRANE_EXPIRATION_FIELD
+
+- **Description:** Field name for expiration time in JWT.
+- **Example:** `MEMBRANE_EXPIRATION_FIELD=exp`
+
+### MEMBRANE_ENCODE_ALGORITHM
+
+- **Description:** Algorithm used for encoding JWT.
+- **Example:** `MEMBRANE_ENCODE_ALGORITHM=RS256`
+
+### MEMBRANE_TOKEN_TYPE
+
+- **Description:** Type of token to be used.
+- **Example:** `MEMBRANE_TOKEN_TYPE=JWT`
+
+### MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN
+
+- **Description:** Regex for the list of email domains accepted by the application.
+- **Example:** `MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN=^[a-zA-Z0-9._%+-]+@(?:gc.ca|outlook.com)$`
+
+### MEMBRANE_COMM_CONNECTION_STRING
+
+- **Description:** Connection string for the Azure communication service.
+- **Example:** `MEMBRANE_COMM_CONNECTION_STRING=your_azure_communication_service_connection_string`
+
+### MEMBRANE_SENDER_EMAIL
+
+- **Description:** Email address that will send emails.
+- **Example:** `MEMBRANE_SENDER_EMAIL=DoNotReply@your_domain.com`
+
+### MEMBRANE_EMAIL_SUBJECT
+
+- **Description:** Subject line for outgoing emails.
+- **Example:** `MEMBRANE_EMAIL_SUBJECT=Please Verify Your Email Address`
+
+### MEMBRANE_EMAIL_SEND_SUCCESS
+
+- **Description:** Message when an email is successfully sent.
+- **Example:** `MEMBRANE_EMAIL_SEND_SUCCESS=Valid email address, Email sent with JWT link`
+
+### MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME
+
+- **Description:** Time in seconds to wait for email sending.
+- **Example:** `MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME=2`
+
+### MEMBRANE_EMAIL_SEND_HTML_TEMPLATE
+
+- **Description:** HTML template for outgoing emails.
+- **Example:** `MEMBRANE_EMAIL_SEND_HTML_TEMPLATE=<html><h1>{}</h1></html>`
+
+### MEMBRANE_GENERIC_500_ERROR_FIELD
+
+- **Description:** Field name for generic 500 errors.
+- **Example:** `MEMBRANE_GENERIC_500_ERROR_FIELD=error`
+
+### MEMBRANE_GENERIC_500_ERROR
+
+- **Description:** Generic error message for 500 status code.
+- **Example:** `MEMBRANE_GENERIC_500_ERROR=An unexpected error occurred. Please try again later.`
 
 Once you have defined all these variables, save and close the `.env` file. The Quart application will now use these environment variable values when it runs.
 
@@ -173,9 +242,9 @@ Open a separate terminal or command prompt. Make sure the virtual environment is
 quart --app testapp1.py run --port=4000
 ```
 
-### 9. Interact with Louis Login Frontend:
+### 9. Interact with Membrane Frontend:
 
-Ensure that the Louis Login Frontend React application is running, ideally on `localhost`. This application will serve as the frontend interface for users to provide their email addresses to Louis Login Backend.
+Ensure that the Membrane Frontend React application is running, ideally on `localhost`. This application will serve as the frontend interface for users to provide their email addresses to Membrane Backend.
 
 ---
 
@@ -220,36 +289,54 @@ You can now interact with both the main Quart application and the client simulat
    openssl rand -hex 32
    ```
 
-3. Populate the following variables in the `.env` file:
+3. Populate the following variables in the `.env` file. Example for tests and dev:
 
-   ```
-   # CORS settings
-   MEMBRANE_ALLOWED_ORIGINS=#comma separated urls to connected frontends
+   ```env
+   # Server settings
+   MEMBRANE_ALLOWED_ORIGINS=http://localhost:3000
+   MEMBRANE_LOGGING_LEVEL=DEBUG
+   MEMBRANE_LOGGING_FORMAT=[%(asctime)s] [%(levelname)s] [%(filename)s:%(lineno)d:%(funcName)s] - %(message)s
+   MEMBRANE_HEALTH_MESSAGE=Ok
+   MEMBRABE_SERVER_NAME=membrane
 
    # Frontend
-   MEMBRANE_FRONTEND=#the membrane frontend url
+   MEMBRANE_FRONTEND=http://localhost:3000
 
    # Secrets and Keys
    MEMBRANE_SECRET_KEY=#your secret key generated at step 2
    MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY=keys/
    MEMBRANE_SERVER_PRIVATE_KEY=keys/server_private_key.pem
    MEMBRANE_SERVER_PUBLIC_KEY=keys/server_public_key.pem
+   MEMBRANE_TEST_APP_PUBLIC_KEY=keys/testapp1_public_key.pem
+   MEMBRANE_TEST_APP_PRIVATE_KEY=keys/testapp1_private_key.pem
 
    # JWT and Session settings
-   MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS=4
-   MEMBRANE_JWT_EXPIRE_SECONDS=4
-   MEMBRANE_SESSION_LIFETIME_SECONDS=4
+   MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS=300
+   MEMBRANE_JWT_EXPIRE_SECONDS=300
+   MEMBRANE_SESSION_LIFETIME_SECONDS=300
+   MEMBRANE_SESSION_COOKIE_SECURE=true
    MEMBRANE_SESSION_TYPE=null
-
-   # Logging and Debugging
-   MEMBRANE_LOGGING_LEVEL=DEBUG
+   MEMBRANE_TOKEN_BLACKLIST=
+   MEMBRANE_APP_ID_FIELD=app_id
+   MEMBRANE_DATA_FIELD=data
+   MEMBRANE_REDIRECT_URL_FIELD=redirect_url
+   MEMBRANE_EXPIRATION_FIELD=exp
+   MEMBRANE_ENCODE_ALGORITHM=RS256
+   MEMBRANE_TOKEN_TYPE=JWT
 
    # Email settings
-   MEMBRANE_ALLOWED_EMAIL_DOMAINS=gc.ca,canada.ca,inspection.gc.ca
+   MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN=^[a-zA-Z0-9._%+-]+@(?:gc.ca|outlook.com)$
    MEMBRANE_COMM_CONNECTION_STRING=#your azure communication service connection string
    MEMBRANE_SENDER_EMAIL=#your azure mailfrom email address
-   MEMBRANE_EMAIL_SUBJECT=Please Verify Your Email Address
-   MEMBRANE_EMAIL_SEND_SUCCESS=Valid email address. Email sent with JWT link
+   MEMBRANE_EMAIL_SUBJECT=Please Verify You Email Address
+   MEMBRANE_EMAIL_SEND_SUCCESS=Valid email address, Email sent with JWT link
+   MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME=2
+   MEMBRANE_EMAIL_SEND_HTML_TEMPLATE=<html><h1>{}</h1></html>
+
+
+   # Error messages
+   MEMBRANE_GENERIC_500_ERROR_FIELD=error
+   MEMBRANE_GENERIC_500_ERROR=An unexpected error occurred. Please try again later.
    ```
 
 ### 3. Running the App with Docker
@@ -269,9 +356,9 @@ You can now interact with both the main Quart application and the client simulat
 3. Run the Docker container:
    ```bash
    docker run -v $(pwd)/keys:/app/keys -p $PORT:$PORT \
-      -e SERVER_PORT=$PORT \
-      -e SERVER_WORKERS=$WORKERS \
-      -e SERVER_KEEP_ALIVE=$KEEP_ALIVE \
+      -e PORT=$PORT \
+      -e WORKERS=$WORKERS \
+      -e KEEP_ALIVE=$KEEP_ALIVE \
       --env-file .env \
       your_app_name
    ```

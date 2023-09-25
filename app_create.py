@@ -22,10 +22,17 @@ def create_app():
 
     app.config.update(
         {
+            # Server settings
             "MEMBRANE_ALLOWED_ORIGINS": os.getenv(
                 "MEMBRANE_ALLOWED_ORIGINS", "*"
             ).split(","),
+            "MEMBRANE_LOGGING_LEVEL": os.getenv("MEMBRANE_LOGGING_LEVEL", "DEBUG"),
+            "MEMBRANE_LOGGING_FORMAT": os.getenv("MEMBRANE_LOGGING_FORMAT", ""),
+            "MEMBRANE_HEALTH_MESSAGE": os.getenv("MEMBRANE_HEALTH_MESSAGE", "Ok"),
+            "SERVER_NAME": os.getenv("MEMBRABE_SERVER_NAME", "membrane"),
+            # Frontend
             "MEMBRANE_FRONTEND": os.getenv("MEMBRANE_FRONTEND", ""),
+            # Secrets and Keys
             "SECRET_KEY": os.getenv("MEMBRANE_SECRET_KEY", ""),
             "MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY": Path(
                 os.getenv("MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY", "keys/public_keys")
@@ -36,6 +43,7 @@ def create_app():
             "MEMBRANE_SERVER_PUBLIC_KEY": Path(
                 os.getenv("MEMBRANE_SERVER_PUBLIC_KEY", "")
             ),
+            # JWT and Session settings
             "MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS": int(
                 os.getenv("MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS", 30 * 60)
             ),
@@ -53,9 +61,15 @@ def create_app():
             "MEMBRANE_TOKEN_BLACKLIST": set(
                 os.getenv("MEMBRANE_TOKEN_BLACKLIST", "").split(",")
             ),
-            "MEMBRANE_LOGGING_LEVEL": os.getenv("MEMBRANE_LOGGING_LEVEL", "DEBUG"),
-            "MEMBRANE_ALLOWED_EMAIL_DOMAINS": os.getenv(
-                "MEMBRANE_ALLOWED_EMAIL_DOMAINS", ""
+            "MEMBRANE_APP_ID_FIELD": os.getenv("MEMBRANE_APP_ID_FIELD", ""),
+            "MEMBRANE_DATA_FIELD": os.getenv("MEMBRANE_DATA_FIELD", ""),
+            "MEMBRANE_REDIRECT_URL_FIELD": os.getenv("MEMBRANE_REDIRECT_URL_FIELD", ""),
+            "MEMBRANE_EXPIRATION_FIELD": os.getenv("MEMBRANE_EXPIRATION_FIELD", ""),
+            "MEMBRANE_ENCODE_ALGORITHM": os.getenv("MEMBRANE_ENCODE_ALGORITHM", ""),
+            "MEMBRANE_TOKEN_TYPE": os.getenv("MEMBRANE_TOKEN_TYPE", ""),
+            # Email settings
+            "MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN": os.getenv(
+                "MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN", ""
             ),
             "MEMBRANE_COMM_CONNECTION_STRING": os.getenv(
                 "MEMBRANE_COMM_CONNECTION_STRING", ""
@@ -66,9 +80,14 @@ def create_app():
             "MEMBRANE_EMAIL_SEND_HTML_TEMPLATE": os.getenv(
                 "MEMBRANE_EMAIL_SEND_HTML_TEMPLATE", ""
             ),
-            "MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME": int(
-                os.getenv("MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME", "")
+            "MEMBRANE_EMAIL_SEND_POLLER_WAIT_SECONDS": int(
+                os.getenv("MEMBRANE_EMAIL_SEND_POLLER_WAIT_SECONDS", 2)
             ),
+            # Error messages
+            "MEMBRANE_GENERIC_500_ERROR_FIELD": os.getenv(
+                "MEMBRANE_GENERIC_500_ERROR_FIELD", ""
+            ),
+            "MEMBRANE_GENERIC_500_ERROR": os.getenv("MEMBRANE_GENERIC_500_ERROR", ""),
         }
     )
 
@@ -83,7 +102,7 @@ def create_app():
         app, allow_origin=app.config["MEMBRANE_ALLOWED_ORIGINS"], allow_credentials=True
     )
     logging.basicConfig(
-        format="[%(asctime)s] [%(levelname)s] [%(filename)s:%(lineno)d:%(funcName)s] - %(message)s",
+        format=app.config["MEMBRANE_LOGGING_FORMAT"],
         level=getattr(logging, app.config["MEMBRANE_LOGGING_LEVEL"]),
     )
 

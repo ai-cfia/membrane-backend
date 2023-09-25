@@ -2,35 +2,39 @@ from logging import getLogger
 
 import pytest
 
-from emails import UnexpectedEmailSendError, send_email
+from emails import InvalidConnectionStringError, UnexpectedEmailSendError, send_email
 
 
 @pytest.mark.asyncio
-async def test_send_real_email(azure_conn_string, sender_email, receiver_email):
+async def test_send_real_email(
+    azure_conn_string, sender_email, receiver_email, email_subject, email_body
+):
     logger = getLogger("testLogger")
 
     send_email(
         azure_conn_string,
         sender_email,
         receiver_email,
-        "Subject",
-        "Body",
+        email_subject,
+        email_body,
         logger,
     )
 
 
 @pytest.mark.asyncio
-async def test_invalid_conn_string(sender_email):
+async def test_invalid_conn_string(
+    sender_email, receiver_email, email_subject, email_body
+):
     bad_conn_string = "InvalidConnectionString"
     logger = getLogger("testLogger")
 
-    with pytest.raises(UnexpectedEmailSendError):
+    with pytest.raises(InvalidConnectionStringError):
         send_email(
             bad_conn_string,
             sender_email,
-            "recipient@example.com",
-            "Subject",
-            "Body",
+            receiver_email,
+            email_subject,
+            email_body,
             logger,
         )
 

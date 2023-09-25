@@ -1,5 +1,5 @@
 """
-CFIA Louis Backend Quart Application
+CFIA Membrane Backend Quart Application
 """
 import traceback
 
@@ -30,9 +30,9 @@ async def log_request_info():
     app.logger.debug("Body: %s", await request.get_data())
 
 
-@app.get("/ping")
-async def ping():
-    return "ok", 200
+@app.get("/health")
+async def health():
+    return app.config["MEMBRANE_HEALTH_MESSAGE"], 200
 
 
 @app.route("/authenticate", methods=["GET", "POST"])
@@ -43,15 +43,17 @@ async def authenticate():
     This endpoint can handle three types of requests:
     1. If the request contains both a valid client JWT and an email:
         - Validates the provided email.
-        - Generates a verification token and sends a verification email to the provided address.
+        - Generates a verification token and sends a verification email to the provided
+        address.
     2. If the request only contains a valid client JWT without an email:
-        - Redirects the user to the Louis login frontend.
+        - Redirects the user to the Membrane frontend.
     3. If client JWT decoding fails:
-        - Attempts to decode using the verification token method, to validate a user attempting
-          to confirm their email.
+        - Attempts to decode using the verification token method, to validate a user
+        attempting to confirm their email.
 
     Returns:
-        JSON response or redirect, depending on the provided inputs and their validation.
+        JSON response or redirect, depending on the provided inputs and their
+        validation.
     """
     app.logger.debug("Entering authenticate route")
 
@@ -65,7 +67,7 @@ async def authenticate():
             email = validate_email_from_request((await request.get_json()).get("email"))
             verification_url = generate_email_verification_token(
                 email,
-                clientapp_decoded_token["redirect_url"],
+                clientapp_decoded_token[app.config["MEMBRANE_REDIRECT_URL_FIELD"]],
                 app.config["MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS"],
                 app.config["MEMBRANE_SERVER_PRIVATE_KEY"],
             )
@@ -79,7 +81,7 @@ async def authenticate():
                 verification_url,
                 app.logger,
                 app.config["MEMBRANE_EMAIL_SEND_HTML_TEMPLATE"],
-                app.config["MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME"],
+                app.config["MEMBRANE_EMAIL_SEND_POLLER_WAIT_SECONDS"],
             )
 
             return (
@@ -99,7 +101,7 @@ async def authenticate():
             return redirect_to_client_app_using_verification_token(
                 clientapp_token,
                 app.config["MEMBRANE_SERVER_PUBLIC_KEY"],
-                app.config["TOKEN_BLACKLIST"],
+                app.config["MEMBRANE_TOKEN_BLACKLIST"],
             )
         except JWTError as inner_error:
             app.logger.error(
@@ -107,7 +109,7 @@ async def authenticate():
                 type(inner_error),
                 traceback.format_exc(),
             )
-            # TODO: Redirect to Louis main site if token is invalid.
+            # TODO: Redirect to membrane main site if token is invalid.
 
     return jsonify({"error": "Invalid request method"}), 405
 
