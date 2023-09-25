@@ -29,7 +29,7 @@ def create_app():
             "MEMBRANE_LOGGING_LEVEL": os.getenv("MEMBRANE_LOGGING_LEVEL", "DEBUG"),
             "MEMBRANE_LOGGING_FORMAT": os.getenv("MEMBRANE_LOGGING_FORMAT", ""),
             "MEMBRANE_HEALTH_MESSAGE": os.getenv("MEMBRANE_HEALTH_MESSAGE", "Ok"),
-            "SERVER_NAME": os.getenv("MEMBRABE_SERVER_NAME", "membrane"),
+            "SERVER_NAME": os.getenv("MEMBRANE_SERVER_NAME", "membrane"),
             # Frontend
             "MEMBRANE_FRONTEND": os.getenv("MEMBRANE_FRONTEND", ""),
             # Secrets and Keys

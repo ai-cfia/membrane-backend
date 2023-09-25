@@ -49,11 +49,6 @@ def sender_email():
 
 
 @pytest.fixture(scope="session")
-def invalid_emails():
-    return os.getenv("MEMBRANE_INVALID_EMAILS").split(",")
-
-
-@pytest.fixture(scope="session")
 def receiver_email():
     return os.getenv("MEMBRANE_RECEIVER_EMAIL")
 
