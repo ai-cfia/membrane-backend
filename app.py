@@ -57,12 +57,20 @@ app.config["SESSION_COOKIE_SECURE"] = True
 jwt = JWTManager(app)
 
 # Configuration paths and URLs retrieved from environment variables # TODO: Set default values
+# Configuration paths and URLs retrieved from environment variables # TODO: Set default values
 CLIENT_PUBLIC_KEYS_DIRECTORY = Path(
     os.getenv("CLIENT_PUBLIC_KEYS_DIRECTORY", "keys/public_keys")
 )
+print(f"CLIENT_PUBLIC_KEYS_DIRECTORY: {str(CLIENT_PUBLIC_KEYS_DIRECTORY)[:5]}...")
+
 SERVER_PRIVATE_KEY = Path(os.getenv("SERVER_PRIVATE_KEY", ""))
+print(f"SERVER_PRIVATE_KEY: {str(SERVER_PRIVATE_KEY)[:5]}...")
+
 SERVER_PUBLIC_KEY = Path(os.getenv("SERVER_PUBLIC_KEY", ""))
+print(f"SERVER_PUBLIC_KEY: {str(SERVER_PUBLIC_KEY)[:5]}...")
+
 REDIRECT_URL_TO_LOUIS_FRONTEND = os.getenv("REDIRECT_URL_TO_LOUIS_FRONTEND", "")
+print(f"REDIRECT_URL_TO_LOUIS_FRONTEND: {REDIRECT_URL_TO_LOUIS_FRONTEND}")
 
 # Validate the environment settings
 validate_environment_settings(
