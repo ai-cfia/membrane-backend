@@ -1,6 +1,6 @@
 # Deployment Guide for membrane-backend
 
-This guide outlines the steps to deploy membrane-backend to Google Cloud Run.
+This guide outlines the steps to deploy manually membrane-backend to Google Cloud Run.
 
 ## Steps
  1. Run the script from DevOps repo available [here](https://github.com/ai-cfia/devops)
@@ -9,13 +9,7 @@ This guide outlines the steps to deploy membrane-backend to Google Cloud Run.
 
 3. Enable google Secret Manager 
 
-4. Create a new secret and for each key, give it a name and upload it. Keep this tab open as you will need it for an upcoming step.
-
-> Note : it is recommanded you use these names
-> - client_private_key	
-> - client1_public_key	
-> - server_private_key
-> - server_public_key
+4. Put your keys in the root folder and create a new secret and for each key, give it a name and upload it.
 
 5. On Cloud Run, click on the name of the application you want to mount your secrets as volume on to and click on "Edit & Deploy New Revision" on the top of the screen.
 
