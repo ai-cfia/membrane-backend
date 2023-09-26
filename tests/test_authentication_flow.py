@@ -20,7 +20,7 @@ async def test_invalid_token_returns_422_unprocessable_content(
     test_client: QuartClient,
 ):
     """Test case for invalid token provided."""
-    response = await test_client.get("/authenticate?token=invalidtokenhere")
+    response = await test_client.get("/authenticate?token=invalid_token_here")
     assert response.status_code == 405
 
 
@@ -97,7 +97,7 @@ async def test_valid_verification_token_returns_302_found(
     """
     response = await test_client.get(await sample_verification_token)
     # If the request contains a valid email verification token, ...
-    # ... then redirect the user to client applicaiton.
+    # ... then redirect the user to client application.
     assert response.status_code == 302
 
 
@@ -106,6 +106,6 @@ async def test_invalid_verification_token_returns_405_method_not_allowed(
     test_client: QuartClient, sample_verification_token
 ):
     """Test the scenario where the request only contains an invalid client JWT"""
-    response = await test_client.get(await sample_verification_token + "invalidstring")
+    response = await test_client.get(await sample_verification_token + "invalid_string")
     # If the request contains an invalid email verification token, then throw error.
     assert response.status_code == 405

@@ -15,10 +15,10 @@ def setup_module(module):
     os.environ["MEMBRANE_ALLOWED_EMAIL_DOMAINS"] = "gc.ca,canada.ca,inspection.gc.ca"
 
 
-def assert_invalid_email(invlaid_email):
+def assert_invalid_email(invalid_email):
     try:
-        is_valid_email(invlaid_email)
-        assert False, f"Expected {invlaid_email} to be invalid but was not."
+        is_valid_email(invalid_email)
+        assert False, f"Expected {invalid_email} to be invalid but was not."
     except EmailError:
         assert True
 
