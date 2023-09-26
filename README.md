@@ -78,11 +78,6 @@ Now, define each of the following variables:
 - **Description:** Health check message for the server.
 - **Example:** `MEMBRANE_HEALTH_MESSAGE=Ok`
 
-### MEMBRANE_SERVER_NAME
-
-- **Description:** The name of the server.
-- **Example:** `MEMBRANE_SERVER_NAME=membrane`
-
 ### MEMBRANE_FRONTEND
 
 - **Description:** Redirect URL leading users to the login frontend.
@@ -297,7 +292,6 @@ You can now interact with both the main Quart application and the client simulat
    MEMBRANE_LOGGING_LEVEL=DEBUG
    MEMBRANE_LOGGING_FORMAT=[%(asctime)s] [%(levelname)s] [%(filename)s:%(lineno)d:%(funcName)s] - %(message)s
    MEMBRANE_HEALTH_MESSAGE=Ok
-   MEMBRANE_SERVER_NAME=membrane
 
    # Frontend
    MEMBRANE_FRONTEND=http://localhost:3000

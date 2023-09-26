@@ -2,8 +2,10 @@
 Pytest configuration and shared fixtures for test setup.
 """
 import os
+from datetime import datetime, timedelta
 from pathlib import Path
 
+import jwt
 import pytest
 from dotenv import load_dotenv
 
@@ -11,15 +13,23 @@ load_dotenv(".env.tests")
 
 # Import the Quart application instance
 from app import app as quart_app  # noqa: E402
-from generate_jwt import generate_jwt  # noqa: E402
 from jwt_utils import generate_email_verification_token  # noqa: E402
+
+SERVER_PRIVATE_KEY = Path("tests/server_private_key/server_private_key.pem")
 
 
 @pytest.fixture
 def app():
     """Quart application fixture for the tests."""
-    quart_app.config["SESSION_TYPE"] = os.getenv("MEMBRANE_SESSION_TYPE")
     quart_app.config["TESTING"] = True
+    quart_app.config["SERVER_NAME"] = "login.example.com"
+    quart_app.config["MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY"] = Path(
+        "tests/client_public_keys"
+    )
+    quart_app.config["MEMBRANE_SERVER_PRIVATE_KEY"] = SERVER_PRIVATE_KEY
+    quart_app.config["MEMBRANE_SERVER_PUBLIC_KEY"] = Path(
+        "tests/server_public_key/server_public_key.pem"
+    )
     yield quart_app
     # # pylint: disable=redefined-outer-name
 
@@ -31,106 +41,83 @@ def test_client(app):
 
 
 @pytest.fixture(scope="session")
-def test_private_key():
+def client_private_key():
     """Fixture to read and provide the private key."""
-    with open(os.getenv("MEMBRANE_TEST_APP_PRIVATE_KEY", ""), "rb") as f:
+    with open("tests/client_private_keys/testapp1_private_key.pem", "rb") as f:
         return f.read()
 
 
 @pytest.fixture(scope="session")
-def azure_conn_string():
-    return os.getenv("MEMBRANE_COMM_CONNECTION_STRING")
-
-
-@pytest.fixture(scope="session")
-def sender_email():
-    return os.getenv("MEMBRANE_SENDER_EMAIL")
-
-
-@pytest.fixture(scope="session")
-def receiver_email():
-    return os.getenv("MEMBRANE_RECEIVER_EMAIL")
-
-
-@pytest.fixture(scope="session")
-def email_subject():
-    return os.getenv("MEMBRANE_EMAIL_SUBJECT")
-
-
-@pytest.fixture(scope="session")
-def email_body():
-    return os.getenv("MEMBRANE_EMAIL_BODY")
-
-
-@pytest.fixture(scope="session")
 def data_field():
-    return os.getenv("MEMBRANE_DATA_FIELD")
-
-
-@pytest.fixture(scope="session")
-def data():
-    return os.getenv("MEMBRANE_DATA")
+    return quart_app.config["MEMBRANE_DATA_FIELD"]
 
 
 @pytest.fixture(scope="session")
 def app_id_field():
-    return os.getenv("MEMBRANE_APP_ID_FIELD")
-
-
-@pytest.fixture(scope="session")
-def app_id():
-    return os.getenv("MEMBRANE_APP_ID")
+    return quart_app.config["MEMBRANE_APP_ID_FIELD"]
 
 
 @pytest.fixture(scope="session")
 def redirect_url_field():
-    return os.getenv("MEMBRANE_REDIRECT_URL_FIELD")
-
-
-@pytest.fixture(scope="session")
-def redirect_url():
-    return os.getenv("MEMBRANE_REDIRECT_URL")
-
-
-@pytest.fixture(scope="session")
-def test_app_public_key_dir():
-    return Path(os.getenv("MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY"))
+    return quart_app.config["MEMBRANE_REDIRECT_URL_FIELD"]
 
 
 @pytest.fixture(scope="session")
 def expiration_field():
-    return os.getenv("MEMBRANE_EXPIRATION_FIELD")
+    return quart_app.config["MEMBRANE_EXPIRATION_FIELD"]
+
+
+@pytest.fixture(scope="session")
+def algorithm():
+    return quart_app.config["MEMBRANE_ENCODE_ALGORITHM"]
+
+
+@pytest.fixture(scope="session")
+def token_type():
+    return quart_app.config["MEMBRANE_TOKEN_TYPE"]
 
 
 @pytest.fixture
 def payload(
     data_field,
-    data,
     app_id_field,
-    app_id,
     redirect_url_field,
-    redirect_url,
 ):
     """Test client fixture for the tests."""
     return {
-        data_field: data,
-        app_id_field: app_id,
-        redirect_url_field: redirect_url,
+        data_field: "test_data",
+        app_id_field: "testapp1",
+        redirect_url_field: "www.example.com",
     }
 
 
 @pytest.fixture
-def sample_jwt_token(generate_jwt_token, payload):
+def sample_jwt_token(
+    generate_jwt_token,
+    payload,
+    expiration_field,
+    algorithm,
+    token_type,
+    app_id_field,
+):
     """Fixture to generate a sample JWT token for testing."""
-    return generate_jwt_token(payload)
+    return generate_jwt_token(
+        payload, expiration_field, algorithm, token_type, app_id_field, "testapp1"
+    )
 
 
 @pytest.fixture
-def generate_jwt_token(test_private_key):
+def generate_jwt_token(client_private_key):
     """Fixture to generate JWT tokens for testing purposes."""
 
-    def _generator(payload, headers=None):
-        return generate_jwt(payload, test_private_key, headers=headers)
+    def _generator(
+        payload, expiration_field, algorithm, token_type, app_id_field, app_id
+    ):
+        if expiration_field not in payload:
+            expiration_seconds = datetime.utcnow() + timedelta(seconds=5 * 60)
+            payload[expiration_field] = int(expiration_seconds.timestamp())
+        headers = {"alg": algorithm, "typ": token_type, app_id_field: app_id}
+        return jwt.encode(payload, client_private_key, algorithm, headers)
 
     return _generator
 
@@ -140,9 +127,9 @@ async def sample_verification_token(app):
     """Fixture to generate a sample email verification token for testing."""
     async with app.app_context():
         verification_url = generate_email_verification_token(
-            os.getenv("MEMBRANE_RECEIVER_EMAIL"),
-            os.getenv("MEMBRANE_FRONTEND"),
-            int(os.getenv("MEMBRANE_JWT_EXPIRE_SECONDS")),
-            Path(os.getenv("MEMBRANE_SERVER_PRIVATE_KEY")),
+            "test@inspection.gc.ca",
+            "https://www.example.com/",
+            int(5 * 60),
+            SERVER_PRIVATE_KEY,
         )
     return verification_url

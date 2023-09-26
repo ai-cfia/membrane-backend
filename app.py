@@ -30,8 +30,9 @@ async def log_request_info():
     app.logger.debug("Body: %s", await request.get_data())
 
 
-@app.get("/health")
+@app.route("/health", methods=["GET"])
 async def health():
+    print("Debug: Inside /health endpoint")  # Debug print
     return app.config["MEMBRANE_HEALTH_MESSAGE"], 200
 
 
@@ -58,23 +59,23 @@ async def authenticate():
     app.logger.debug("Entering authenticate route")
 
     try:
-        clientapp_token = request.args.get("token")
-        clientapp_decoded_token = decode_client_jwt_token(
-            clientapp_token, app.config["MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY"]
+        client_app_token = request.args.get("token")
+        client_app_decoded_token = decode_client_jwt_token(
+            client_app_token, app.config["MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY"]
         )
 
-        if clientapp_decoded_token and request.is_json:
+        if client_app_decoded_token and request.is_json:
             email = validate_email_from_request((await request.get_json()).get("email"))
             verification_url = generate_email_verification_token(
                 email,
-                clientapp_decoded_token[app.config["MEMBRANE_REDIRECT_URL_FIELD"]],
+                client_app_decoded_token[app.config["MEMBRANE_REDIRECT_URL_FIELD"]],
                 app.config["MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS"],
                 app.config["MEMBRANE_SERVER_PRIVATE_KEY"],
             )
 
             app.add_background_task(
                 send_email,
-                app.config["MEMBRANE_COMM_CONNECTION_STRING"],
+                app.config["MEMBRANE_EMAIL_CLIENT"],
                 app.config["MEMBRANE_SENDER_EMAIL"],
                 email,
                 app.config["MEMBRANE_EMAIL_SUBJECT"],
@@ -82,6 +83,7 @@ async def authenticate():
                 app.logger,
                 app.config["MEMBRANE_EMAIL_SEND_HTML_TEMPLATE"],
                 app.config["MEMBRANE_EMAIL_SEND_POLLER_WAIT_SECONDS"],
+                app.config["MEMBRANE_EMAIL_SEND_TIMEOUT_SECONDS"],
             )
 
             return (
@@ -90,7 +92,7 @@ async def authenticate():
             )
         else:
             return login_redirect_with_client_jwt(
-                clientapp_token,
+                client_app_token,
                 app.config["MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY"],
                 app.config["MEMBRANE_FRONTEND"],
             )
@@ -99,7 +101,7 @@ async def authenticate():
         app.logger.error("Error occurred: %s\n%s", error, traceback.format_exc())
         try:
             return redirect_to_client_app_using_verification_token(
-                clientapp_token,
+                client_app_token,
                 app.config["MEMBRANE_SERVER_PUBLIC_KEY"],
                 app.config["MEMBRANE_TOKEN_BLACKLIST"],
             )

@@ -1,50 +1,87 @@
 from logging import getLogger
+from unittest.mock import MagicMock, patch
 
-import pytest
+from emails import (
+    EmailSendingFailedError,
+    EmailsException,
+    PollingTimeoutError,
+    send_email,
+)
 
-from emails import InvalidConnectionStringError, UnexpectedEmailSendError, send_email
 
-
-@pytest.mark.asyncio
-async def test_send_real_email(
-    azure_conn_string, sender_email, receiver_email, email_subject, email_body
-):
+def test_send_email_success():
     logger = getLogger("testLogger")
 
-    send_email(
-        azure_conn_string,
-        sender_email,
-        receiver_email,
-        email_subject,
-        email_body,
-        logger,
-    )
+    mock_result = {"status": "Succeeded", "id": "some_id"}
+
+    with patch("azure.communication.email.EmailClient") as MockEmailClient:
+        mock_instance = MockEmailClient.return_value
+        mock_poller = MagicMock()
+        mock_poller.result.return_value = mock_result
+        mock_instance.begin_send.return_value = mock_poller
+        email = {
+            "email_client": mock_instance,
+            "sender_email": "sender_email",
+            "recipient_email": "recipient_email",
+            "subject": "subject",
+            "body": "body",
+        }
+
+        try:
+            result = send_email(**email, logger=logger)
+            assert result == {"status": "Succeeded", "operation_id": "some_id"}
+        except EmailsException:
+            assert False, f"Expected {email} to be successfully sent but was not."
 
 
-@pytest.mark.asyncio
-async def test_invalid_conn_string(
-    sender_email, receiver_email, email_subject, email_body
-):
-    bad_conn_string = "InvalidConnectionString"
+def test_send_email_fail():
     logger = getLogger("testLogger")
 
-    with pytest.raises(InvalidConnectionStringError):
-        send_email(
-            bad_conn_string,
-            sender_email,
-            receiver_email,
-            email_subject,
-            email_body,
-            logger,
-        )
+    mock_result = {"status": "Failed", "error": "some_error"}
+
+    with patch("azure.communication.email.EmailClient") as MockEmailClient:
+        mock_instance = MockEmailClient.return_value
+        mock_poller = MagicMock()
+        mock_poller.result.return_value = mock_result
+        mock_instance.begin_send.return_value = mock_poller
+        email = {
+            "email_client": mock_instance,
+            "sender_email": "sender_email",
+            "recipient_email": "recipient_email",
+            "subject": "subject",
+            "body": "body",
+        }
+
+        try:
+            send_email(**email, logger=logger)
+            assert False, f"Expected {email} to fail but it didn't."
+        except EmailSendingFailedError:
+            assert True
 
 
-@pytest.mark.asyncio
-async def test_non_existent_recipient(azure_conn_string, sender_email):
+def test_polling_timeout_error():
     logger = getLogger("testLogger")
-    bad_recipient = "nonexistent@example.com"
 
-    with pytest.raises(UnexpectedEmailSendError):
-        send_email(
-            azure_conn_string, sender_email, bad_recipient, "Subject", "Body", logger
-        )
+    with patch("azure.communication.email.EmailClient") as MockEmailClient:
+        mock_instance = MockEmailClient.return_value
+        mock_poller = MagicMock()
+        mock_poller.done.return_value = False
+        mock_instance.begin_send.return_value = mock_poller
+
+        email = {
+            "email_client": mock_instance,
+            "sender_email": "sender_email",
+            "recipient_email": "recipient_email",
+            "subject": "subject",
+            "body": "body",
+        }
+
+        try:
+            send_email(
+                **email, logger=logger, poller_wait_time=1, timeout=10
+            )  # Setting low timeout for quicker test
+            assert (
+                False
+            ), f"Expected {email} to fail due to polling timeout but it didn't."
+        except PollingTimeoutError:
+            assert True

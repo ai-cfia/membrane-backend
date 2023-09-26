@@ -1,18 +1,8 @@
 """
 Email Test Cases.
 """
-import os
 
 from request_helpers import EmailError, is_valid_email
-
-
-# pylint: disable=unused-argument
-def setup_module(module):
-    """
-    Setup for the test module.
-    Setting the ALLOWED_EMAIL_DOMAINS environment variable for testing.
-    """
-    os.environ["MEMBRANE_ALLOWED_EMAIL_DOMAINS"] = "gc.ca,canada.ca,inspection.gc.ca"
 
 
 def assert_invalid_email(invalid_email):

@@ -15,16 +15,12 @@ class PollingTimeoutError(EmailsException):
     """Custom Exception for polling time-out during email sending."""
 
 
-class InvalidConnectionStringError(EmailsException):
-    """Custom Exception for invalid connection strings."""
-
-
 class UnexpectedEmailSendError(EmailsException):
     """Custom Exception for unexpected errors."""
 
 
 def send_email(
-    connection_string,
+    email_client: EmailClient,
     sender_email,
     recipient_email,
     subject,
@@ -32,6 +28,7 @@ def send_email(
     logger: Logger,
     html_content: str = None,
     poller_wait_time=None,
+    timeout=None,
 ) -> dict:
     """
     Send an email using Azure Communication Services.
@@ -54,14 +51,11 @@ def send_email(
     """
 
     logger.debug(
-        f"send_email called with params - connection_string: {connection_string}, "
         f"sender_email: {sender_email}, recipient_email: {recipient_email}, "
         f"subject: {subject}, body: {body}, "
         f"html_content: {html_content}, poller_wait_time: {poller_wait_time}"
     )
     try:
-        email_client = EmailClient.from_connection_string(connection_string)
-
         message = {
             "content": {
                 "subject": subject,
@@ -76,16 +70,16 @@ def send_email(
 
         if not poller_wait_time:
             poller_wait_time = 10
+        if not timeout:
+            timeout = 180
         time_elapsed = 0
-
         poller = email_client.begin_send(message)
-
         while not poller.done():
             logger.debug(f"Email send poller status: {poller.status()}")
             poller.wait(poller_wait_time)
             time_elapsed += poller_wait_time
 
-            if time_elapsed > 18 * poller_wait_time:
+            if time_elapsed > timeout:
                 raise PollingTimeoutError("Polling timed out.")
 
         result = poller.result()
@@ -98,9 +92,6 @@ def send_email(
     except EmailsException as e:
         logger.exception(e)
         raise
-    except ValueError as e:
-        logger.exception(e)
-        raise InvalidConnectionStringError("Invalid connection string.") from e
     except Exception as e:
         logger.exception(e)
         raise UnexpectedEmailSendError(f"An unexpected error occurred: {e}") from e

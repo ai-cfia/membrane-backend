@@ -285,7 +285,7 @@ def redirect_to_client_app_using_verification_token(
     Decodes the email verification token and redirects to the appropriate endpoint.
 
     Args:
-        clientapp_token (str): The JWT token from the client application.
+        verification_token (str): The JWT token from the client application.
         server_public_key (Path): Path to the public key used for JWT decoding.
         token_blacklist (set): A set to store tokens that should not be reused.
 

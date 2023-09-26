@@ -3,6 +3,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+from azure.communication.email import EmailClient
 from dotenv import load_dotenv
 from quart import Quart
 from quart_cors import cors
@@ -29,7 +30,6 @@ def create_app():
             "MEMBRANE_LOGGING_LEVEL": os.getenv("MEMBRANE_LOGGING_LEVEL", "DEBUG"),
             "MEMBRANE_LOGGING_FORMAT": os.getenv("MEMBRANE_LOGGING_FORMAT", ""),
             "MEMBRANE_HEALTH_MESSAGE": os.getenv("MEMBRANE_HEALTH_MESSAGE", "Ok"),
-            "SERVER_NAME": os.getenv("MEMBRANE_SERVER_NAME", "membrane"),
             # Frontend
             "MEMBRANE_FRONTEND": os.getenv("MEMBRANE_FRONTEND", ""),
             # Secrets and Keys
@@ -81,13 +81,20 @@ def create_app():
                 "MEMBRANE_EMAIL_SEND_HTML_TEMPLATE", ""
             ),
             "MEMBRANE_EMAIL_SEND_POLLER_WAIT_SECONDS": int(
-                os.getenv("MEMBRANE_EMAIL_SEND_POLLER_WAIT_SECONDS", 2)
+                os.getenv("MEMBRANE_EMAIL_SEND_POLLER_WAIT_SECONDS", 10)
+            ),
+            "MEMBRANE_EMAIL_SEND_TIMEOUT_SECONDS": int(
+                os.getenv("MEMBRANE_EMAIL_SEND_TIMEOUT_SECONDS", 180)
             ),
             # Error messages
             "MEMBRANE_GENERIC_500_ERROR_FIELD": os.getenv(
                 "MEMBRANE_GENERIC_500_ERROR_FIELD", ""
             ),
             "MEMBRANE_GENERIC_500_ERROR": os.getenv("MEMBRANE_GENERIC_500_ERROR", ""),
+            # Email Client
+            "MEMBRANE_EMAIL_CLIENT": EmailClient.from_connection_string(
+                os.getenv("MEMBRANE_COMM_CONNECTION_STRING", "")
+            ),
         }
     )
 
