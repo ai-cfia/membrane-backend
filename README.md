@@ -76,7 +76,7 @@ Now, define each of the following variables:
 ### MEMBRANE_HEALTH_MESSAGE
 
 - **Description:** Health check message for the server.
-- **Example:** `MEMBRANE_HEALTH_MESSAGE=Ok`
+- **Example:** `MEMBRANE_HEALTH_MESSAGE=ok`
 
 ### MEMBRANE_FRONTEND
 
@@ -291,7 +291,7 @@ You can now interact with both the main Quart application and the client simulat
    MEMBRANE_CORS_ALLOWED_ORIGINS=http://localhost:3000
    MEMBRANE_LOGGING_LEVEL=DEBUG
    MEMBRANE_LOGGING_FORMAT=[%(asctime)s] [%(levelname)s] [%(filename)s:%(lineno)d:%(funcName)s] - %(message)s
-   MEMBRANE_HEALTH_MESSAGE=Ok
+   MEMBRANE_HEALTH_MESSAGE=ok
 
    # Frontend
    MEMBRANE_FRONTEND=http://localhost:3000

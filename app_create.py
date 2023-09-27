@@ -72,7 +72,7 @@ def create_app():
                 "[%(asctime)s] [%(levelname)s] "
                 "[%(filename)s:%(lineno)d:%(funcName)s] - %(message)s",
             ),
-            "MEMBRANE_HEALTH_MESSAGE": os.getenv("MEMBRANE_HEALTH_MESSAGE", "Ok"),
+            "MEMBRANE_HEALTH_MESSAGE": os.getenv("MEMBRANE_HEALTH_MESSAGE", "ok"),
             "MEMBRANE_FRONTEND": os.getenv("MEMBRANE_FRONTEND"),
             "SECRET_KEY": os.getenv("MEMBRANE_SECRET_KEY"),
             "PERMANENT_SESSION_LIFETIME": timedelta(
