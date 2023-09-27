@@ -57,11 +57,11 @@ To run the Quart application correctly, it requires some environment variables t
 
 Now, define each of the following variables:
 
-### MEMBRANE_ALLOWED_ORIGINS
+### MEMBRANE_CORS_ALLOWED_ORIGINS
 
 - **Description:** List of origins allowed for cross-origin requests (CORS).
 - **Format:** Comma-separated list of origins.
-- **Example:** `MEMBRANE_ALLOWED_ORIGINS=http://localhost:3000`
+- **Example:** `MEMBRANE_CORS_ALLOWED_ORIGINS=http://localhost:3000`
 
 ### MEMBRANE_LOGGING_LEVEL
 
@@ -288,7 +288,7 @@ You can now interact with both the main Quart application and the client simulat
 
    ```env
    # Server settings
-   MEMBRANE_ALLOWED_ORIGINS=http://localhost:3000
+   MEMBRANE_CORS_ALLOWED_ORIGINS=http://localhost:3000
    MEMBRANE_LOGGING_LEVEL=DEBUG
    MEMBRANE_LOGGING_FORMAT=[%(asctime)s] [%(levelname)s] [%(filename)s:%(lineno)d:%(funcName)s] - %(message)s
    MEMBRANE_HEALTH_MESSAGE=Ok
