@@ -14,9 +14,9 @@ RUN pip install --no-cache-dir -r requirements-production.txt
 
 # Set environment variable for PORT
 ENV PORT=5000 
-ENV WORKERS=1 
-ENV KEEP_ALIVE=5
+ENV MEMBRANE_WORKERS=1 
+ENV MEMBRANE_KEEP_ALIVE=5
 
 # Run the Quart app when the container starts
 # Adapt the workers and keep-alive parameters to the deployment requirements
-ENTRYPOINT hypercorn --bind :$PORT --workers $WORKERS --keep-alive $KEEP_ALIVE app:app
+ENTRYPOINT hypercorn --bind :$PORT --workers $MEMBRANE_WORKERS --keep-alive $MEMBRANE_KEEP_ALIVE app:app

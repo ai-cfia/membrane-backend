@@ -332,15 +332,10 @@ You can now interact with both the main Quart application and the client simulat
 2. Set your desired port number:
 
    ```bash
-   export PORT=<your_port_here> WORKERS=<number_of_workers> KEEP_ALIVE=<keep-alive-seconds>
+   export PORT=<your_port_here>
    ```
 
 3. Run the Docker container:
    ```bash
-   docker run -v $(pwd)/keys:/app/keys -p $PORT:$PORT \
-      -e PORT=$PORT \
-      -e WORKERS=$WORKERS \
-      -e KEEP_ALIVE=$KEEP_ALIVE \
-      --env-file .env \
-      your_app_name
+   docker run -v $(pwd)/keys:/app/keys -p $PORT:$PORT -e PORT=$PORT --env-file .env your_app_name
    ```
