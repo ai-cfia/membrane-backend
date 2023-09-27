@@ -13,7 +13,10 @@ COPY . .
 RUN pip install --no-cache-dir -r requirements-production.txt
 
 # Set environment variable for PORT
-ENV PORT=5000
+ENV PORT=5000 
+ENV MEMBRANE_WORKERS=1 
+ENV MEMBRANE_KEEP_ALIVE=5
 
-# Run your Flask app when the container starts
-ENTRYPOINT gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 15 --forwarded-allow-ips "*" app:app
+# Run the Quart app when the container starts
+# Adapt the workers and keep-alive parameters to the deployment requirements
+ENTRYPOINT hypercorn --bind :$PORT --workers $MEMBRANE_WORKERS --keep-alive $MEMBRANE_KEEP_ALIVE app:app

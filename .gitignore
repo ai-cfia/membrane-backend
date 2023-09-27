@@ -10,6 +10,7 @@ venv/
 
 # Ignore environment-specific files
 .env
+.env.tests
 
 # Ignore any local configuration files
 config.local.ini

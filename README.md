@@ -1,6 +1,6 @@
-## Setting Up a Flask Application
+## Setting Up a Quart Application
 
-Follow the instructions below to set up a Flask application in your environment:
+Follow the instructions below to set up a Quart application in your environment:
 
 ### 1. Check Pip Version:
 
@@ -46,148 +46,287 @@ pip install -r requirements.txt
 
 ---
 
-Now, you can proceed with running your Flask application or any other tasks. Always ensure that your virtual environment is activated when working on the project to maintain dependencies separately from your global Python environment.
+Now, you can proceed with running your Quart application or any other tasks. Always ensure that your virtual environment is activated when working on the project to maintain dependencies separately from your global Python environment.
 
 ## 6. Environment Variable Configuration:
 
-To run the Flask application correctly, it requires some environment variables to be set. Follow the steps below to set them up:
+To run the Quart application correctly, it requires some environment variables to be set. Follow the steps below to set them up:
 
 1. Navigate to the root directory of the project and create a new file named `.env`.
 2. Open this `.env` file using your preferred text editor.
 
 Now, define each of the following variables:
 
-### ALLOWED_EMAIL_DOMAINS
+### MEMBRANE_CORS_ALLOWED_ORIGINS
 
-- **Description:** List of email domains that are accepted by the application.
-- **Format:** Comma-separated list of domains.
-- **Example:** `ALLOWED_EMAIL_DOMAINS=gc.ca,canada.ca,inspection.gc.ca`
+- **Description:** List of origins allowed for cross-origin requests (CORS).
+- **Format:** Comma-separated list of origins.
+- **Example:** `MEMBRANE_CORS_ALLOWED_ORIGINS=http://localhost:3000`
 
-### SECRET_KEY
+### MEMBRANE_LOGGING_LEVEL
 
-- **Description:** The secret key used for creating encrypted tokens and for the Flask session.
-- **Recommendation:** Generate a strong random value for this.
+- **Description:** Specifies the logging level for the application.
+- **Example:** `MEMBRANE_LOGGING_LEVEL=DEBUG`
 
-### JWT_ACCESS_TOKEN_EXPIRES_MINUTES
+### MEMBRANE_LOGGING_FORMAT
 
-- **Description:** The expiration time (in minutes) for the JWT access token.
-- **Example:** `JWT_ACCESS_TOKEN_EXPIRES_MINUTES=30`
+- **Description:** Format for the log messages.
+- **Example:** `MEMBRANE_LOGGING_FORMAT=[%(asctime)s] [%(levelname)s] [%(filename)s:%(lineno)d:%(funcName)s] - %(message)s`
 
-### SESSION_TYPE
+### MEMBRANE_HEALTH_MESSAGE
 
-- **Description:** Specifies where to store the session data. Options can include 'filesystem', 'redis', 'memcached', etc.
-- **Example:** `SESSION_TYPE=filesystem`
+- **Description:** Health check message for the server.
+- **Example:** `MEMBRANE_HEALTH_MESSAGE=ok`
 
-### CLIENT_PUBLIC_KEYS_DIRECTORY
+### MEMBRANE_FRONTEND
 
-- **Description:** Path to the directory where client public keys are stored. These keys are used for JWT validation.
-- **Example:** `CLIENT_PUBLIC_KEYS_DIRECTORY=keys/public_keys`
+- **Description:** Redirect URL leading users to the login frontend.
+- **Example:** `MEMBRANE_FRONTEND=http://localhost:3000`
 
-### SERVER_PRIVATE_KEY
+### MEMBRANE_SECRET_KEY
 
-- **Description:** Path to the server's private key file. This key is used for creating and signing tokens.
-- **Example:** `SERVER_PRIVATE_KEY=keys/server_private.pem`
+- **Description:** The secret key used for creating encrypted tokens.
+- **Example:** `MEMBRANE_SECRET_KEY=your_secret_key`
 
-### SERVER_PUBLIC_KEY
+### MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY
 
-- **Description:** Path to the server's public key file. This key is used for verifying tokens.
-- **Example:** `SERVER_PUBLIC_KEY=keys/server_public.pem`
+- **Description:** Path to the directory where client public keys are stored for JWT validation.
+- **Example:** `MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY=keys/`
 
-### SESSION_LIFETIME_MINUTES
+### MEMBRANE_SERVER_PRIVATE_KEY
 
-- **Description:** Duration (in minutes) after which the session will expire.
-- **Example:** `SESSION_LIFETIME_MINUTES=30`
+- **Description:** Path to the server's private key file used for creating and signing tokens.
+- **Example:** `MEMBRANE_SERVER_PRIVATE_KEY=keys/server_private_key.pem`
 
-### REDIRECT_URL_TO_LOUIS_FRONTEND
+### MEMBRANE_SERVER_PUBLIC_KEY
 
-- **Description:** The URL to which the Louis login backend will redirect users, leading them to the Louis login frontend where they can provide an email address.
-- **Example:** `REDIRECT_URL_TO_LOUIS_FRONTEND=https://login.louisfrontend.com/`
+- **Description:** Path to the server's public key file used for verifying tokens.
+- **Example:** `MEMBRANE_SERVER_PUBLIC_KEY=keys/server_public_key.pem`
 
-Once you have defined all these variables, save and close the `.env` file. The Flask application will now use these environment variable values when it runs.
+### MEMBRANE_TEST_APP_PUBLIC_KEY
 
-### 7. Run the Main Flask Application:
+- **Description:** Path to the test application's public key.
+- **Example:** `MEMBRANE_TEST_APP_PUBLIC_KEY=keys/testapp1_public_key.pem`
+
+### MEMBRANE_TEST_APP_PRIVATE_KEY
+
+- **Description:** Path to the test application's private key.
+- **Example:** `MEMBRANE_TEST_APP_PRIVATE_KEY=keys/testapp1_private_key.pem`
+
+### MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS
+
+- **Description:** Expiration time (in seconds) for the JWT access token.
+- **Example:** `MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS=300`
+
+### MEMBRANE_JWT_EXPIRE_SECONDS
+
+- **Description:** General JWT expiration time in seconds.
+- **Example:** `MEMBRANE_JWT_EXPIRE_SECONDS=300`
+
+### MEMBRANE_SESSION_LIFETIME_SECONDS
+
+- **Description:** Duration (in seconds) after which the session will expire.
+- **Example:** `MEMBRANE_SESSION_LIFETIME_SECONDS=300`
+
+### MEMBRANE_SESSION_COOKIE_SECURE
+
+- **Description:** Indicates if the session cookie should be secure.
+- **Example:** `MEMBRANE_SESSION_COOKIE_SECURE=true`
+
+### MEMBRANE_SESSION_TYPE
+
+- **Description:** Specifies the storage for session data. Options: 'filesystem', 'redis', 'memcached', etc.
+- **Example:** `MEMBRANE_SESSION_TYPE=null`
+
+### MEMBRANE_TOKEN_BLACKLIST
+
+- **Description:** List of revoked tokens or sessions for security.
+- **Format:** Comma-separated list of tokens.
+- **Example:** `MEMBRANE_TOKEN_BLACKLIST=`
+
+### MEMBRANE_APP_ID_FIELD
+
+- **Description:** Field name for the application ID in JWT.
+- **Example:** `MEMBRANE_APP_ID_FIELD=app_id`
+
+### MEMBRANE_DATA_FIELD
+
+- **Description:** Field name for data in JWT.
+- **Example:** `MEMBRANE_DATA_FIELD=data`
+
+### MEMBRANE_REDIRECT_URL_FIELD
+
+- **Description:** Field name for redirect URL in JWT.
+- **Example:** `MEMBRANE_REDIRECT_URL_FIELD=redirect_url`
+
+### MEMBRANE_ENCODE_ALGORITHM
+
+- **Description:** Algorithm used for encoding JWT.
+- **Example:** `MEMBRANE_ENCODE_ALGORITHM=RS256`
+
+### MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN
+
+- **Description:** Regex for the list of email domains accepted by the application.
+- **Example:** `MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN=^[a-zA-Z0-9._+]+@(?:gc\.ca|canada\.ca|inspection\.gc\.ca)$`
+
+### MEMBRANE_COMM_CONNECTION_STRING
+
+- **Description:** Connection string for the Azure communication service.
+- **Example:** `MEMBRANE_COMM_CONNECTION_STRING=your_azure_communication_service_connection_string`
+
+### MEMBRANE_SENDER_EMAIL
+
+- **Description:** Email address that will send emails.
+- **Example:** `MEMBRANE_SENDER_EMAIL=DoNotReply@your_domain.com`
+
+### MEMBRANE_EMAIL_SUBJECT
+
+- **Description:** Subject line for outgoing emails.
+- **Example:** `MEMBRANE_EMAIL_SUBJECT=Please Verify Your Email Address`
+
+### MEMBRANE_EMAIL_SEND_SUCCESS
+
+- **Description:** Message when an email is successfully sent.
+- **Example:** `MEMBRANE_EMAIL_SEND_SUCCESS=Valid email address, Email sent with JWT link`
+
+### MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME
+
+- **Description:** Time in seconds to wait for email sending.
+- **Example:** `MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME=2`
+
+### MEMBRANE_EMAIL_SEND_HTML_TEMPLATE
+
+- **Description:** HTML template for outgoing emails.
+- **Example:** `MEMBRANE_EMAIL_SEND_HTML_TEMPLATE=<html><h1>{}</h1></html>`
+
+### MEMBRANE_GENERIC_500_ERROR_FIELD
+
+- **Description:** Field name for generic 500 errors.
+- **Example:** `MEMBRANE_GENERIC_500_ERROR_FIELD=error`
+
+### MEMBRANE_GENERIC_500_ERROR
+
+- **Description:** Generic error message for 500 status code.
+- **Example:** `MEMBRANE_GENERIC_500_ERROR=An unexpected error occurred. Please try again later.`
+
+Once you have defined all these variables, save and close the `.env` file. The Quart application will now use these environment variable values when it runs.
+
+### 7. Run the Main Quart Application:
 
 With your virtual environment activated, start the main `app.py`:
 
 ```bash
-flask run
+quart run
 ```
 
 ### 8. Simulate a Client Application:
 
-Open a separate terminal or command prompt. Make sure the virtual environment is activated and then run the `test1app.py` to simulate a client application:
+Open a separate terminal or command prompt. Make sure the virtual environment is activated and then run the `testapp1.py` to simulate a client application:
 
 ```bash
-flask --app .\test1app.py run --port=4000
+quart --app testapp1.py run --port=4000
 ```
 
-### 9. Interact with Louis Login Frontend:
+### 9. Interact with Membrane Frontend:
 
-Ensure that the Louis Login Frontend React application is running, ideally on `localhost`. This application will serve as the frontend interface for users to provide their email addresses to Louis Login Backend.
+Ensure that the Membrane Frontend React application is running, ideally on `localhost`. This application will serve as the frontend interface for users to provide their email addresses to Membrane Backend.
 
 ---
 
-You can now interact with both the main Flask application and the client simulator to validate the entire authentication flow.
+You can now interact with both the main Quart application and the client simulator to validate the entire authentication flow.
 
 ## Running the app from dockerfile
 
-### Generate Server and Client Keys
+### 1. Generate Server, Client Keys, and Environment Files
 
 #### Prerequisites
 
 - OpenSSL installed on your machine (in WSL).
+- An Azure Communication Service connection string
+- An Azure MailFrom email address connected to the Azure Communication Service resource
 
 #### Steps
 
 1. Navigate to the project's root directory.
-2. Run the following script:
+2. Run the initialization script:
 
    ```bash
-   ./generate_keys.sh
+   ./init_project.sh <your-test-app-id>
    ```
 
-   This will generate four `.pem` files in a folder called `keys`:
+   This script will:
 
-   - `server_private_key.pem`
-   - `server_public_key.pem`
-   - `client_private_key.pem`
-   - `client_public_key.pem`
+   - Generate keys in a `keys` folder for both the server and the specified app id.
+   - Copy `.env.template` to `.env`.
+   - Copy `.env.tests.template` to `.env.tests`.
 
 #### Note
 
-- If the keys already exist, the script will overwrite them.
+- If the keys or environment files already exist, the script will overwrite them.
+- Logs are written to `init.log`.
 
-### Configure environment variables
+### 2. Configure Environment Variables
 
-1. Create a .env file in the project's root directory.
+1. Open the `.env` file generated in the project's root directory.
 2. Generate a secret key:
 
-```bash
-openssl rand -hex 32
-```
+   ```bash
+   openssl rand -hex 32
+   ```
 
-3. Add the following variables:
+3. Populate the following variables in the `.env` file. Example for tests and dev:
 
-```
-ALLOWED_EMAIL_DOMAINS=gc.ca
-SECRET_KEY=<your_secret_key_here>
-JWT_ACCESS_TOKEN_EXPIRES_MINUTES=2
-SESSION_TYPE=filesystem
-CLIENT_PUBLIC_KEYS_DIRECTORY=keys/
-SERVER_PRIVATE_KEY=keys/server_private_key.pem
-SERVER_PUBLIC_KEY=keys/server_public_key.pem
-SESSION_LIFETIME_MINUTES=4
-REDIRECT_URL_TO_LOUIS_FRONTEND=http://localhost:3000
-```
+   ```env
+   # Server settings
+   MEMBRANE_CORS_ALLOWED_ORIGINS=http://localhost:3000
+   MEMBRANE_LOGGING_LEVEL=DEBUG
+   MEMBRANE_LOGGING_FORMAT=[%(asctime)s] [%(levelname)s] [%(filename)s:%(lineno)d:%(funcName)s] - %(message)s
+   MEMBRANE_HEALTH_MESSAGE=ok
 
-4. Replace `<your_secret_key_here>` with the generated key from step 2.
+   # Frontend
+   MEMBRANE_FRONTEND=http://localhost:3000
 
-### Running the App
+   # Secrets and Keys
+   MEMBRANE_SECRET_KEY=#your secret key generated at step 2
+   MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY=keys/
+   MEMBRANE_SERVER_PRIVATE_KEY=keys/server_private_key.pem
+   MEMBRANE_SERVER_PUBLIC_KEY=keys/server_public_key.pem
+   MEMBRANE_TEST_APP_PUBLIC_KEY=keys/testapp1_public_key.pem
+   MEMBRANE_TEST_APP_PRIVATE_KEY=keys/testapp1_private_key.pem
+
+   # JWT and Session settings
+   MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS=300
+   MEMBRANE_JWT_EXPIRE_SECONDS=300
+   MEMBRANE_SESSION_LIFETIME_SECONDS=300
+   MEMBRANE_SESSION_COOKIE_SECURE=true
+   MEMBRANE_SESSION_TYPE=null
+   MEMBRANE_TOKEN_BLACKLIST=
+   MEMBRANE_APP_ID_FIELD=app_id
+   MEMBRANE_DATA_FIELD=data
+   MEMBRANE_REDIRECT_URL_FIELD=redirect_url
+   MEMBRANE_ENCODE_ALGORITHM=RS256
+
+   # Email settings
+   MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN=^[a-zA-Z0-9._+]+@(?:gc\.ca|canada\.ca|inspection\.gc\.ca)$
+   MEMBRANE_COMM_CONNECTION_STRING=#your azure communication service connection string
+   MEMBRANE_SENDER_EMAIL=#your azure mailfrom email address
+   MEMBRANE_EMAIL_SUBJECT=Please Verify You Email Address
+   MEMBRANE_EMAIL_SEND_SUCCESS=Valid email address, Email sent with JWT link
+   MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME=2
+   MEMBRANE_EMAIL_SEND_HTML_TEMPLATE=<html><h1>{}</h1></html>
+
+
+   # Error messages
+   MEMBRANE_GENERIC_500_ERROR_FIELD=error
+   MEMBRANE_GENERIC_500_ERROR=An unexpected error occurred. Please try again later.
+   ```
+
+### 3. Running the App with Docker
 
 1. Build the Docker image:
 
    ```bash
-   docker build -t flask-app .
+   docker build -t your_app_name .
    ```
 
 2. Set your desired port number:
@@ -197,11 +336,6 @@ REDIRECT_URL_TO_LOUIS_FRONTEND=http://localhost:3000
    ```
 
 3. Run the Docker container:
-
    ```bash
-   docker run -v ./keys:/app/keys -p $PORT:$PORT -e PORT=$PORT --env-file .env flask-app
+   docker run -v $(pwd)/keys:/app/keys -p $PORT:$PORT -e PORT=$PORT --env-file .env your_app_name
    ```
-
-#### Note
-
-- Replace `<your_port_here>` with the port number you wish to use for the application.

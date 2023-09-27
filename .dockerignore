@@ -15,9 +15,10 @@ flask_session/*
 # Ignore test-related files
 tests/
 
-# Ignore specific file
-test1app.py
+# Ignore test and dev specific file
+testapp1.py
 requirements.txt
+generate_jwt.py
 
 # Ignore environment files
 *.env
@@ -29,3 +30,6 @@ requirements.txt
 # Ignore secrets
 keys/
 *.pem
+
+# Ignore log files
+*.log
