@@ -164,11 +164,6 @@ Now, define each of the following variables:
 - **Description:** Algorithm used for encoding JWT.
 - **Example:** `MEMBRANE_ENCODE_ALGORITHM=RS256`
 
-### MEMBRANE_TOKEN_TYPE
-
-- **Description:** Type of token to be used.
-- **Example:** `MEMBRANE_TOKEN_TYPE=JWT`
-
 ### MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN
 
 - **Description:** Regex for the list of email domains accepted by the application.
@@ -310,7 +305,6 @@ You can now interact with both the main Quart application and the client simulat
    MEMBRANE_DATA_FIELD=data
    MEMBRANE_REDIRECT_URL_FIELD=redirect_url
    MEMBRANE_ENCODE_ALGORITHM=RS256
-   MEMBRANE_TOKEN_TYPE=JWT
 
    # Email settings
    MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN=^[a-zA-Z0-9._%+-]+@(?:gc.ca|outlook.com)$

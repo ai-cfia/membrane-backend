@@ -27,7 +27,6 @@ def create_app():
         redirect_url_field=os.getenv("MEMBRANE_REDIRECT_URL_FIELD", "redirect_url"),
         algorithm=os.getenv("MEMBRANE_ENCODE_ALGORITHM", "RS256"),
         data_field=os.getenv("MEMBRANE_DATA_FIELD", "data"),
-        token_type=os.getenv("MEMBRANE_TOKEN_TYPE", "JWT"),
         jwt_access_token_expire_seconds=int(
             os.getenv("MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS", 300)
         ),

@@ -43,7 +43,6 @@ class TestConfig(unittest.TestCase):
             jwt_access_token_expire_seconds=300,
             jwt_expire_seconds=300,
             token_blacklist=set(),
-            token_type="JWT",
         )
 
     @classmethod
