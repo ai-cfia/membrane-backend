@@ -2,6 +2,7 @@ from logging import getLogger
 from unittest.mock import MagicMock, patch
 
 from emails import (
+    EmailConfig,
     EmailSendingFailedError,
     EmailsException,
     PollingTimeoutError,
@@ -9,7 +10,7 @@ from emails import (
 )
 
 
-def test_send_email_success():
+def test_send_email_success(email_config: EmailConfig):
     logger = getLogger("testLogger")
 
     mock_result = {"status": "Succeeded", "id": "some_id"}
@@ -19,12 +20,11 @@ def test_send_email_success():
         mock_poller = MagicMock()
         mock_poller.result.return_value = mock_result
         mock_instance.begin_send.return_value = mock_poller
+        email_config.email_client = mock_instance
         email = {
-            "email_client": mock_instance,
-            "sender_email": "sender_email",
             "recipient_email": "recipient_email",
-            "subject": "subject",
             "body": "body",
+            "config": email_config,
         }
 
         try:
@@ -34,7 +34,7 @@ def test_send_email_success():
             assert False, f"Expected {email} to be successfully sent but was not."
 
 
-def test_send_email_fail():
+def test_send_email_fail(email_config: EmailConfig):
     logger = getLogger("testLogger")
 
     mock_result = {"status": "Failed", "error": "some_error"}
@@ -44,12 +44,11 @@ def test_send_email_fail():
         mock_poller = MagicMock()
         mock_poller.result.return_value = mock_result
         mock_instance.begin_send.return_value = mock_poller
+        email_config.email_client = mock_instance
         email = {
-            "email_client": mock_instance,
-            "sender_email": "sender_email",
             "recipient_email": "recipient_email",
-            "subject": "subject",
             "body": "body",
+            "config": email_config,
         }
 
         try:
@@ -59,7 +58,7 @@ def test_send_email_fail():
             assert True
 
 
-def test_polling_timeout_error():
+def test_polling_timeout_error(email_config: EmailConfig):
     logger = getLogger("testLogger")
 
     with patch("azure.communication.email.EmailClient") as MockEmailClient:
@@ -68,18 +67,15 @@ def test_polling_timeout_error():
         mock_poller.done.return_value = False
         mock_instance.begin_send.return_value = mock_poller
 
+        email_config.email_client = mock_instance
         email = {
-            "email_client": mock_instance,
-            "sender_email": "sender_email",
             "recipient_email": "recipient_email",
-            "subject": "subject",
             "body": "body",
+            "config": email_config,
         }
 
         try:
-            send_email(
-                **email, logger=logger, poller_wait_time=1, timeout=10
-            )  # Setting low timeout for quicker test
+            send_email(**email, logger=logger)  # Setting low timeout for quicker test
             assert (
                 False
             ), f"Expected {email} to fail due to polling timeout but it didn't."

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from logging import Logger
 
 from azure.communication.email import EmailClient
@@ -19,67 +20,40 @@ class UnexpectedEmailSendError(EmailsException):
     """Custom Exception for unexpected errors."""
 
 
-def send_email(
-    email_client: EmailClient,
-    sender_email,
-    recipient_email,
-    subject,
-    body,
-    logger: Logger,
-    html_content: str = None,
-    poller_wait_time=None,
-    timeout=None,
-) -> dict:
-    """
-    Send an email using Azure Communication Services.
+@dataclass
+class EmailConfig:
+    email_client: EmailClient
+    sender_email: str
+    subject: str
+    validation_pattern: str
+    email_send_success: str
+    html_content: str = "<html><h1>{}</h1></html>"
+    poller_wait_time: int = 10
+    timeout: int = 180
 
-    Parameters:
-    - connection_string (str): The connection string for Azure Communication Services.
-    - sender_email (str): The sender's email address.
-    - recipient_email (str): The recipient's email address.
-    - subject (str): The subject of the email.
-    - body (str): The plain text body content of the email.
-    - logger (Logger): Logger for capturing logs.
-    - html_content (str, optional): The HTML content of the email. Defaults to None.
 
-    Returns:
-    - dict: A dictionary containing the operation status and ID if successful.
-
-    Raises:
-    - EmailsException: If email sending process fails, times out or if any unexpected
-    error occurs.
-    """
-
-    logger.debug(
-        f"sender_email: {sender_email}, recipient_email: {recipient_email}, "
-        f"subject: {subject}, body: {body}, "
-        f"html_content: {html_content}, poller_wait_time: {poller_wait_time}"
-    )
+def send_email(recipient_email, body: str, config: EmailConfig, logger: Logger) -> dict:
     try:
         message = {
             "content": {
-                "subject": subject,
+                "subject": config.subject,
                 "plainText": body,
-                "html": html_content.format(body)
-                if html_content
+                "html": config.html_content.format(body)
+                if config.html_content
                 else f"<html><h1>{body}</h1></html>",
             },
             "recipients": {"to": [{"address": recipient_email}]},
-            "senderAddress": sender_email,
+            "senderAddress": config.sender_email,
         }
 
-        if not poller_wait_time:
-            poller_wait_time = 10
-        if not timeout:
-            timeout = 180
         time_elapsed = 0
-        poller = email_client.begin_send(message)
+        poller = config.email_client.begin_send(message)
         while not poller.done():
             logger.debug(f"Email send poller status: {poller.status()}")
-            poller.wait(poller_wait_time)
-            time_elapsed += poller_wait_time
+            poller.wait(config.poller_wait_time)
+            time_elapsed += config.poller_wait_time
 
-            if time_elapsed > timeout:
+            if time_elapsed > config.timeout:
                 raise PollingTimeoutError("Polling timed out.")
 
         result = poller.result()

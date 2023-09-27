@@ -25,16 +25,15 @@ class InvalidTokenError(TokenError):
     """Raised when the provided token is invalid."""
 
 
-def is_valid_email(email):
+def is_valid_email(email, pattern):
     """Check if the provided email is valid."""
-    pattern = os.getenv("MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN", "")
 
     if not re.match(pattern, email):
         raise EmailError(f"Invalid email address: {email}")
     return True
 
 
-def validate_email_from_request(email):
+def validate_email_from_request(email, pattern):
     """Extract and validate email."""
 
     # Ensure that an email was provided in the request.
@@ -42,7 +41,7 @@ def validate_email_from_request(email):
         raise EmailError("Missing email.")
 
     # Validate the provided email address.
-    if not is_valid_email(email):
+    if not is_valid_email(email, pattern):
         raise EmailError("Invalid email address.")
 
     return email

@@ -5,64 +5,51 @@ from pathlib import Path
 
 import pytest
 
-from jwt_utils import JWTError, JWTPublicKeyNotFoundError, decode_client_jwt_token
-
-# Sample public and private keys for test purposes
-with open("tests/client_private_keys/testapp1_private_key.pem", "rb") as f:
-    PRIVATE_KEY = f.read()
-with open("tests/client_public_keys/testapp1_public_key.pem", "rb") as f:
-    PUBLIC_KEY = f.read()
-TEST_KEY_DIR = Path("tests/client_public_keys")
+from jwt_utils import (
+    JWTConfig,
+    JWTError,
+    JWTPublicKeyNotFoundError,
+    decode_client_jwt_token,
+)
 
 
-def test_decode_jwt_without_app_id(
-    generate_jwt_token,
-    data_field,
-    expiration_field,
-    algorithm,
-    token_type,
-    app_id_field,
-):
+def test_decode_jwt_without_app_id(generate_jwt_token, jwt_config: JWTConfig):
     """Test decoding of JWT without an app_id."""
-    payload = {data_field: "test_data"}
-    jwt_token = generate_jwt_token(
-        payload, expiration_field, algorithm, token_type, app_id_field, "testapp1"
-    )
+    payload = {jwt_config.data_field: "test_data"}
+    jwt_token = generate_jwt_token(payload, jwt_config, "testapp1")
     with pytest.raises(JWTError, match="No app id in JWT payload."):
-        decode_client_jwt_token(jwt_token, TEST_KEY_DIR)
+        decode_client_jwt_token(jwt_token, jwt_config)
 
 
 def test_decode_jwt_with_nonexistent_app_id(
-    generate_jwt_token, app_id_field, payload, expiration_field, algorithm, token_type
+    generate_jwt_token, payload, jwt_config: JWTConfig
 ):
     """Test decoding of JWT with a non-existent app_id."""
-    payload.update({app_id_field: "nonexistent"})
-    jwt_token = generate_jwt_token(
-        payload, expiration_field, algorithm, token_type, app_id_field, "testapp1"
-    )
+    payload.update({jwt_config.app_id_field: "nonexistent"})
+    jwt_token = generate_jwt_token(payload, jwt_config, "testapp1")
     with pytest.raises(JWTPublicKeyNotFoundError):
-        decode_client_jwt_token(jwt_token, TEST_KEY_DIR)
+        decode_client_jwt_token(jwt_token, jwt_config)
 
 
-def test_decode_jwt_with_invalid_token():
+def test_decode_jwt_with_invalid_token(jwt_config: JWTConfig):
     """Test decoding of an invalid JWT token."""
     invalid_jwt = "invalid.jwt.token"
     # For now let's use Exception, until jwt_utils is refactored in
     # https://github.com/ai-cfia/membrane-backend/issues/60
     with pytest.raises(Exception):
-        decode_client_jwt_token(invalid_jwt, TEST_KEY_DIR)
+        decode_client_jwt_token(invalid_jwt, jwt_config)
 
 
-def test_decode_jwt_invalid_signature(sample_jwt_token):
+def test_decode_jwt_invalid_signature(sample_jwt_token, jwt_config: JWTConfig):
     """Test decoding a JWT token with a tampered signature."""
     jwt_token = sample_jwt_token
     # Tampering with the signature to make it invalid.
     jwt_token = jwt_token[:-3] + "abc"
     with pytest.raises(JWTError):
-        decode_client_jwt_token(jwt_token, TEST_KEY_DIR)
+        decode_client_jwt_token(jwt_token, jwt_config)
 
 
-def test_decode_jwt_malformed_header(sample_jwt_token):
+def test_decode_jwt_malformed_header(sample_jwt_token, jwt_config: JWTConfig):
     """Test decoding a JWT token with a malformed header."""
     jwt_token = sample_jwt_token
     # Manipulating the token to make its header malformed.
@@ -72,4 +59,4 @@ def test_decode_jwt_malformed_header(sample_jwt_token):
     # For now let's use Exception, until jwt_utils is refactored in
     # https://github.com/ai-cfia/membrane-backend/issues/60
     with pytest.raises(Exception):
-        decode_client_jwt_token(jwt_token, TEST_KEY_DIR)
+        decode_client_jwt_token(jwt_token, jwt_config)

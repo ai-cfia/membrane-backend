@@ -7,6 +7,8 @@ from unittest.mock import patch
 import pytest
 from quart.testing import QuartClient
 
+from jwt_utils import JWTConfig
+
 
 @pytest.mark.asyncio
 async def test_missing_token_returns_405_method_not_allowed(test_client: QuartClient):
@@ -74,21 +76,13 @@ async def test_invalid_email_provided_returns_405_method_not_allowed(
 
 @pytest.mark.asyncio
 async def test_extract_with_expired_jwt_returns_405_method_not_allowed(
-    test_client: QuartClient,
-    generate_jwt_token,
-    payload: dict,
-    expiration_field,
-    algorithm,
-    token_type,
-    app_id_field,
+    test_client: QuartClient, generate_jwt_token, payload: dict, jwt_config: JWTConfig
 ):
     """Test case for expired JWT token."""
     # Set the expiration timestamp to 2 days ago
     expired_timestamp = int((datetime.utcnow() - timedelta(days=2)).timestamp())
-    payload.update({expiration_field: expired_timestamp})
-    expired_token = generate_jwt_token(
-        payload, expiration_field, algorithm, token_type, app_id_field, "testapp1"
-    )
+    payload.update({jwt_config.expiration_field: expired_timestamp})
+    expired_token = generate_jwt_token(payload, jwt_config, "testapp1")
     response = await test_client.get(f"/authenticate?token={expired_token}")
     assert response.status_code == 405
 
