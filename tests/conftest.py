@@ -38,7 +38,6 @@ class TestConfig(unittest.TestCase):
             server_private_key=Path("tests/server_private_key/server_private_key.pem"),
             app_id_field="app_id",
             redirect_url_field="redirect_url",
-            expiration_field="exp",
             algorithm="RS256",
             data_field="data",
             jwt_access_token_expire_seconds=300,
@@ -89,9 +88,9 @@ class TestConfig(unittest.TestCase):
         }
 
     def generate_jwt_token(self, payload, jwt_config: JWTConfig, app_id):
-        if jwt_config.expiration_field not in payload:
+        if "exp" not in payload:
             expiration_seconds = datetime.utcnow() + timedelta(seconds=5 * 60)
-            payload[jwt_config.expiration_field] = int(expiration_seconds.timestamp())
+            payload["exp"] = int(expiration_seconds.timestamp())
         headers = {
             "alg": jwt_config.algorithm,
             "typ": jwt_config.token_type,

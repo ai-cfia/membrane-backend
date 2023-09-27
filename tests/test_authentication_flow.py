@@ -48,7 +48,7 @@ class TestAuthenticationFlow(TestConfig, IsolatedAsyncioTestCase):
 
     async def test_extract_with_expired_jwt_returns_405_method_not_allowed(self):
         expired_timestamp = int((datetime.utcnow() - timedelta(days=2)).timestamp())
-        self.payload.update({self.jwt_config.expiration_field: expired_timestamp})
+        self.payload.update({"exp": expired_timestamp})
         expired_token = self.generate_jwt_token(
             self.payload, self.jwt_config, "testapp1"
         )

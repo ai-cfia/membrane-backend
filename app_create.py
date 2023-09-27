@@ -25,7 +25,6 @@ def create_app():
         server_private_key=Path(os.getenv("MEMBRANE_SERVER_PRIVATE_KEY")),
         app_id_field=os.getenv("MEMBRANE_APP_ID_FIELD", "app_id"),
         redirect_url_field=os.getenv("MEMBRANE_REDIRECT_URL_FIELD", "redirect_url"),
-        expiration_field=os.getenv("MEMBRANE_EXPIRATION_FIELD", "exp"),
         algorithm=os.getenv("MEMBRANE_ENCODE_ALGORITHM", "RS256"),
         data_field=os.getenv("MEMBRANE_DATA_FIELD", "data"),
         token_type=os.getenv("MEMBRANE_TOKEN_TYPE", "JWT"),

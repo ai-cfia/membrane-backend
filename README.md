@@ -159,11 +159,6 @@ Now, define each of the following variables:
 - **Description:** Field name for redirect URL in JWT.
 - **Example:** `MEMBRANE_REDIRECT_URL_FIELD=redirect_url`
 
-### MEMBRANE_EXPIRATION_FIELD
-
-- **Description:** Field name for expiration time in JWT.
-- **Example:** `MEMBRANE_EXPIRATION_FIELD=exp`
-
 ### MEMBRANE_ENCODE_ALGORITHM
 
 - **Description:** Algorithm used for encoding JWT.
@@ -314,7 +309,6 @@ You can now interact with both the main Quart application and the client simulat
    MEMBRANE_APP_ID_FIELD=app_id
    MEMBRANE_DATA_FIELD=data
    MEMBRANE_REDIRECT_URL_FIELD=redirect_url
-   MEMBRANE_EXPIRATION_FIELD=exp
    MEMBRANE_ENCODE_ALGORITHM=RS256
    MEMBRANE_TOKEN_TYPE=JWT
 

@@ -55,7 +55,6 @@ class JWTConfig:
     server_private_key: Path
     app_id_field: str
     redirect_url_field: str
-    expiration_field: str
     algorithm: str
     data_field: str
     jwt_access_token_expire_seconds: int
@@ -95,7 +94,7 @@ def decode_client_jwt_token(jwt_token, config: JWTConfig):
         if not redirect_url:
             raise JWTError("No redirect URL found in Token.")
 
-        expired_time = decoded_token[config.expiration_field]
+        expired_time = decoded_token["exp"]
 
         # Get current time
         current_time = datetime.utcnow()
@@ -149,7 +148,7 @@ def decode_email_verification_token(jwt_token: str, config: JWTConfig):
         decoded_token = decode(jwt_token, public_key, algorithms=[config.algorithm])
         if config.redirect_url_field not in decoded_token:
             raise JWTError("No redirect URL found in token.")
-        expired_time = decoded_token[config.expiration_field]
+        expired_time = decoded_token["exp"]
         current_time = datetime.utcnow()
         if current_time.timestamp() > expired_time:
             raise JWTExpired("JWT token has expired.")
@@ -163,8 +162,8 @@ def generate_email_verification_token(email: str, redirect_url: str, config: JWT
     expiration_timestamp = int(expiration_time.timestamp())
     payload = {
         "sub": email,
+        "exp": expiration_timestamp,
         config.redirect_url_field: redirect_url,
-        config.expiration_field: expiration_timestamp,
     }
     email_token = encode_email_verification_token(payload, config)
     verification_url = url_for("authenticate", token=email_token, _external=True)
