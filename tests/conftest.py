@@ -11,16 +11,20 @@ from unittest.mock import patch
 import jwt
 from dotenv import load_dotenv
 
-from app import app as quart_app
-from emails import EmailConfig
-from jwt_utils import JWTConfig, generate_email_verification_token
-
 load_dotenv(".env.tests")
+
+with patch("app_create.EmailClient.from_connection_string") as mock:
+    mock.return_value = None
+    from app import app
+
+from emails import EmailConfig  # noqa: E402
+from jwt_utils import JWTConfig, generate_email_verification_token  # noqa: E402
 
 
 class TestConfig(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.app = app
         cls.client_private_key = cls.read_client_private_key()
         cls.jwt_config = cls.setup_jwt_config()
         cls.email_config = cls.setup_email_config()
@@ -59,9 +63,9 @@ class TestConfig(unittest.TestCase):
         )
 
     def setUp(self):
-        self.app = self.setup_app()
+        self.setup_app()
         self.test_client = self.app.test_client()
-        self.payload = self.setup_payload()
+        self.setup_payload()
 
         # Suppress print statements
         self.held_output = StringIO()
@@ -73,14 +77,13 @@ class TestConfig(unittest.TestCase):
         pass
 
     def setup_app(self):
-        quart_app.config["JWT_CONFIG"] = self.jwt_config
-        quart_app.config["EMAIL_CONFIG"] = self.email_config
-        quart_app.config["TESTING"] = True
-        quart_app.config["SERVER_NAME"] = "login.example.com"
-        return quart_app
+        self.app.config["JWT_CONFIG"] = self.jwt_config
+        self.app.config["EMAIL_CONFIG"] = self.email_config
+        self.app.config["TESTING"] = True
+        self.app.config["SERVER_NAME"] = "login.example.com"
 
     def setup_payload(self):
-        return {
+        self.payload = {
             self.jwt_config.data_field: "test_data",
             self.jwt_config.app_id_field: "testapp1",
             self.jwt_config.redirect_url_field: "www.example.com",
