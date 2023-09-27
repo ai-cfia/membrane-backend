@@ -35,10 +35,14 @@ class TestEmailValidation(TestConfig, unittest.TestCase):
         )
 
     def test_email_with_unsupported_symbols(self):
-        self.assert_invalid_email(
-            "test.user!#%^&*()+=[]{}|;<>?@inspection.gc.ca",
-            self.email_config.validation_pattern,
-        )
+        invalid_chars = "!#%^&*()=[]{}|;<>?,:\"'\\"
+        base_email = "test.user{}@inspection.gc.ca"
+
+        for char in invalid_chars:
+            invalid_email = base_email.format(char)
+            self.assert_invalid_email(
+                invalid_email, self.email_config.validation_pattern
+            )
 
     def test_email_with_lookalike_utf8_characters(self):
         self.assert_invalid_email(

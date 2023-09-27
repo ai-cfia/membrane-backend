@@ -51,7 +51,7 @@ class TestConfig(unittest.TestCase):
             email_client=None,
             sender_email="",
             subject="Please Verify You Email Address",
-            validation_pattern="^[a-zA-Z0-9._%+-]+@(?:gc.ca|canada.ca|inspection.gc.ca)$",
+            validation_pattern="^[a-zA-Z0-9._+]+@(?:gc\.ca|canada\.ca|inspection\.gc\.ca)$",
             email_send_success="Valid email address, Email sent with JWT link",
             html_content="<html><h1>{}</h1></html>",
             poller_wait_seconds=2,

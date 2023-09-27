@@ -167,7 +167,7 @@ Now, define each of the following variables:
 ### MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN
 
 - **Description:** Regex for the list of email domains accepted by the application.
-- **Example:** `MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN=^[a-zA-Z0-9._%+-]+@(?:gc.ca|outlook.com)$`
+- **Example:** `MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN=^[a-zA-Z0-9._+]+@(?:gc\.ca|canada\.ca|inspection\.gc\.ca)$`
 
 ### MEMBRANE_COMM_CONNECTION_STRING
 
@@ -307,7 +307,7 @@ You can now interact with both the main Quart application and the client simulat
    MEMBRANE_ENCODE_ALGORITHM=RS256
 
    # Email settings
-   MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN=^[a-zA-Z0-9._%+-]+@(?:gc.ca|outlook.com)$
+   MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN=^[a-zA-Z0-9._+]+@(?:gc\.ca|canada\.ca|inspection\.gc\.ca)$
    MEMBRANE_COMM_CONNECTION_STRING=#your azure communication service connection string
    MEMBRANE_SENDER_EMAIL=#your azure mailfrom email address
    MEMBRANE_EMAIL_SUBJECT=Please Verify You Email Address
