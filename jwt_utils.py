@@ -2,7 +2,6 @@
 Utilities for encoding, decoding, and validating JWT tokens.
 """
 import logging
-import os
 from copy import copy
 from dataclasses import dataclass
 from datetime import datetime, timedelta

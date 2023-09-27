@@ -1,7 +1,6 @@
 """
 Utility functions to assist with processing and validating HTTP requests.
 """
-import os
 import re
 
 
