@@ -54,7 +54,7 @@ class TestConfig(unittest.TestCase):
             validation_pattern="^[a-zA-Z0-9._%+-]+@(?:gc.ca|canada.ca|inspection.gc.ca)$",
             email_send_success="Valid email address, Email sent with JWT link",
             html_content="<html><h1>{}</h1></html>",
-            poller_wait_time=2,
+            poller_wait_seconds=2,
             timeout=20,
         )
 

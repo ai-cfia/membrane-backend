@@ -3,13 +3,24 @@ Utilities for encoding, decoding, and validating JWT tokens.
 """
 import logging
 from copy import copy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
 
 from jwt import decode, encode
 from jwt import exceptions as jwt_exceptions
 from quart import redirect, url_for
+
+DEFAULT_CLIENT_PUBLIC_KEYS_DIRECTORY = "./keys/client"
+DEFAULT_SERVER_PUBLIC_KEY = "./keys/server_public.pem"
+DEFAULT_SERVER_PRIVATE_KEY = "./keys/server_private.pem"
+DEFAULT_APP_ID_FIELD = "app_id"
+DEFAULT_REDIRECT_URL_FIELD = "redirect_url"
+DEFAULT_ENCODE_ALGORITHM = "RS256"
+DEFAULT_DATA_FIELD = "data"
+DEFAULT_JWT_ACCESS_TOKEN_EXPIRE_SECONDS = 300
+DEFAULT_JWT_EXPIRE_SECONDS = 300
+DEFAULT_TOKEN_BLACKLIST = ""
 
 
 class JWTError(Exception):
@@ -53,13 +64,13 @@ class JWTConfig:
     client_public_keys_folder: Path
     server_public_key: Path
     server_private_key: Path
-    app_id_field: str
-    redirect_url_field: str
-    algorithm: str
-    data_field: str
-    jwt_access_token_expire_seconds: int
-    jwt_expire_seconds: int
-    token_blacklist: set
+    app_id_field: str = DEFAULT_APP_ID_FIELD
+    redirect_url_field: str = DEFAULT_REDIRECT_URL_FIELD
+    algorithm: str = DEFAULT_ENCODE_ALGORITHM
+    data_field: str = DEFAULT_DATA_FIELD
+    jwt_access_token_expire_seconds: int = DEFAULT_JWT_ACCESS_TOKEN_EXPIRE_SECONDS
+    jwt_expire_seconds: int = DEFAULT_JWT_EXPIRE_SECONDS
+    token_blacklist: set = field(default_factory=set)
     token_type: str = "JWT"
 
 
