@@ -3,11 +3,17 @@ name: Docker GCP deployment
 on:
   push:
     branches:
-      - redat97/issue19
-  workflow_dispatch:
+      - main
+  pull_request:
 
 jobs:
+  lint-test:
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@main
+    secrets: inherit
+
   build:
+    if: github.ref == 'refs/heads/main'
+    needs: lint-test
     uses: ai-cfia/github-workflows/.github/workflows/workflow-build-container.yml@main
     with:
       container-name: ${{ github.event.repository.name }}
@@ -15,6 +21,7 @@ jobs:
     secrets: inherit
 
   deploy:
+    if: github.ref == 'refs/heads/main'
     needs: build
     uses: ai-cfia/github-workflows/.github/workflows/workflow-deploy-gcp.yml@main
     with:
