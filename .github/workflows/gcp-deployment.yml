@@ -1,0 +1,24 @@
+name: Docker GCP deployment
+
+on:
+  push:
+    branches:
+      - redat97/issue39
+  workflow_dispatch:
+
+jobs:
+
+  build:
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-build-container.yml@main
+    with:
+      container-name: ${{ github.event.repository.name }}
+      tag: ${{ github.sha }}
+    secrets: inherit
+
+  deploy:
+    needs: build
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-deploy-gcp.yml@main
+    with:
+      container-name: ${{ github.event.repository.name }}
+      tag: ${{ github.sha }}
+    secrets: inherit
