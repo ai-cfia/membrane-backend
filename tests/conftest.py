@@ -13,8 +13,20 @@ from dotenv import load_dotenv
 
 load_dotenv(".env.tests")
 
+
+class DummyEmailClientException(Exception):
+    pass
+
+
+class DummyEmailClient:
+    def __getattr__(self, name):
+        raise DummyEmailClientException(
+            "This is a dummy email client, method not supported."
+        )
+
+
 with patch("app_create.EmailClient.from_connection_string") as mock:
-    mock.return_value = None
+    mock.return_value = DummyEmailClient()
     from app import app
 
 from emails import EmailConfig  # noqa: E402
