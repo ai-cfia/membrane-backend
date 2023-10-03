@@ -57,157 +57,183 @@ To run the Quart application correctly, it requires some environment variables t
 
 Now, define each of the following variables:
 
-### MEMBRANE_CORS_ALLOWED_ORIGINS
+### Mandatory Variables
+
+#### MEMBRANE_CORS_ALLOWED_ORIGINS
 
 - **Description:** List of origins allowed for cross-origin requests (CORS).
 - **Format:** Comma-separated list of origins.
 - **Example:** `MEMBRANE_CORS_ALLOWED_ORIGINS=http://localhost:3000`
+- **Reference:** https://pypi.org/project/quart-cors/
 
-### MEMBRANE_LOGGING_LEVEL
-
-- **Description:** Specifies the logging level for the application.
-- **Example:** `MEMBRANE_LOGGING_LEVEL=DEBUG`
-
-### MEMBRANE_LOGGING_FORMAT
-
-- **Description:** Format for the log messages.
-- **Example:** `MEMBRANE_LOGGING_FORMAT=[%(asctime)s] [%(levelname)s] [%(filename)s:%(lineno)d:%(funcName)s] - %(message)s`
-
-### MEMBRANE_HEALTH_MESSAGE
-
-- **Description:** Health check message for the server.
-- **Example:** `MEMBRANE_HEALTH_MESSAGE=ok`
-
-### MEMBRANE_FRONTEND
+#### MEMBRANE_FRONTEND
 
 - **Description:** Redirect URL leading users to the login frontend.
 - **Example:** `MEMBRANE_FRONTEND=http://localhost:3000`
 
-### MEMBRANE_SECRET_KEY
+#### MEMBRANE_SECRET_KEY
 
 - **Description:** The secret key used for creating encrypted tokens.
 - **Example:** `MEMBRANE_SECRET_KEY=your_secret_key`
+- **Reference:** https://flask.palletsprojects.com/en/latest/config/#builtin-configuration-values
 
-### MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY
+#### MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY
 
 - **Description:** Path to the directory where client public keys are stored for JWT validation.
 - **Example:** `MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY=keys/`
 
-### MEMBRANE_SERVER_PRIVATE_KEY
+#### MEMBRANE_SERVER_PRIVATE_KEY
 
 - **Description:** Path to the server's private key file used for creating and signing tokens.
 - **Example:** `MEMBRANE_SERVER_PRIVATE_KEY=keys/server_private_key.pem`
 
-### MEMBRANE_SERVER_PUBLIC_KEY
+#### MEMBRANE_SERVER_PUBLIC_KEY
 
 - **Description:** Path to the server's public key file used for verifying tokens.
 - **Example:** `MEMBRANE_SERVER_PUBLIC_KEY=keys/server_public_key.pem`
 
-### MEMBRANE_TEST_APP_PUBLIC_KEY
+#### MEMBRANE_COMM_CONNECTION_STRING
 
-- **Description:** Path to the test application's public key.
-- **Example:** `MEMBRANE_TEST_APP_PUBLIC_KEY=keys/testapp1_public_key.pem`
+- **Description:** Connection string for the Azure communication service.
+- **Example:** `MEMBRANE_COMM_CONNECTION_STRING=your_azure_communication_service_connection_string`
+- **Reference:** https://learn.microsoft.com/en-us/python/api/azure-communication-email/azure.communication.email.emailclient?view=azure-python#azure-communication-email-emailclient-from-connection-string
 
-### MEMBRANE_TEST_APP_PRIVATE_KEY
 
-- **Description:** Path to the test application's private key.
-- **Example:** `MEMBRANE_TEST_APP_PRIVATE_KEY=keys/testapp1_private_key.pem`
+#### MEMBRANE_SENDER_EMAIL
 
-### MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS
+- **Description:** Email address that will send emails.
+- **Example:** `MEMBRANE_SENDER_EMAIL=DoNotReply@your_domain.com`
+- **Reference:** https://learn.microsoft.com/en-us/python/api/overview/azure/communication-email-readme?view=azure-python#send-an-email-message
+
+### Optional Variables
+
+#### MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS
 
 - **Description:** Expiration time (in seconds) for the JWT access token.
 - **Example:** `MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS=300`
 
-### MEMBRANE_JWT_EXPIRE_SECONDS
+#### MEMBRANE_JWT_EXPIRE_SECONDS
 
 - **Description:** General JWT expiration time in seconds.
 - **Example:** `MEMBRANE_JWT_EXPIRE_SECONDS=300`
 
-### MEMBRANE_SESSION_LIFETIME_SECONDS
+#### MEMBRANE_SESSION_LIFETIME_SECONDS
 
 - **Description:** Duration (in seconds) after which the session will expire.
 - **Example:** `MEMBRANE_SESSION_LIFETIME_SECONDS=300`
+- **Reference** https://flask-session.readthedocs.io/en/latest/config.html
 
-### MEMBRANE_SESSION_COOKIE_SECURE
+#### MEMBRANE_SESSION_COOKIE_SECURE
 
 - **Description:** Indicates if the session cookie should be secure.
 - **Example:** `MEMBRANE_SESSION_COOKIE_SECURE=true`
+- **Reference** https://flask-session.readthedocs.io/en/latest/config.html
 
-### MEMBRANE_SESSION_TYPE
+#### MEMBRANE_SESSION_TYPE
 
 - **Description:** Specifies the storage for session data. Options: 'filesystem', 'redis', 'memcached', etc.
 - **Example:** `MEMBRANE_SESSION_TYPE=null`
+- **Reference** https://flask-session.readthedocs.io/en/latest/config.html
 
-### MEMBRANE_TOKEN_BLACKLIST
+#### MEMBRANE_TOKEN_BLACKLIST
 
 - **Description:** List of revoked tokens or sessions for security.
 - **Format:** Comma-separated list of tokens.
 - **Example:** `MEMBRANE_TOKEN_BLACKLIST=`
 
-### MEMBRANE_APP_ID_FIELD
+#### MEMBRANE_APP_ID_FIELD
 
 - **Description:** Field name for the application ID in JWT.
 - **Example:** `MEMBRANE_APP_ID_FIELD=app_id`
 
-### MEMBRANE_DATA_FIELD
+#### MEMBRANE_DATA_FIELD
 
 - **Description:** Field name for data in JWT.
 - **Example:** `MEMBRANE_DATA_FIELD=data`
 
-### MEMBRANE_REDIRECT_URL_FIELD
+#### MEMBRANE_REDIRECT_URL_FIELD
 
 - **Description:** Field name for redirect URL in JWT.
 - **Example:** `MEMBRANE_REDIRECT_URL_FIELD=redirect_url`
 
-### MEMBRANE_ENCODE_ALGORITHM
+#### MEMBRANE_ENCODE_ALGORITHM
 
 - **Description:** Algorithm used for encoding JWT.
 - **Example:** `MEMBRANE_ENCODE_ALGORITHM=RS256`
+- **Reference:** https://pyjwt.readthedocs.io/en/latest/algorithms.html#digital-signature-algorithms
 
-### MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN
+#### MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN
 
 - **Description:** Regex for the list of email domains accepted by the application.
 - **Example:** `MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN=^[a-zA-Z0-9._+]+@(?:gc\.ca|canada\.ca|inspection\.gc\.ca)$`
 
-### MEMBRANE_COMM_CONNECTION_STRING
-
-- **Description:** Connection string for the Azure communication service.
-- **Example:** `MEMBRANE_COMM_CONNECTION_STRING=your_azure_communication_service_connection_string`
-
-### MEMBRANE_SENDER_EMAIL
-
-- **Description:** Email address that will send emails.
-- **Example:** `MEMBRANE_SENDER_EMAIL=DoNotReply@your_domain.com`
-
-### MEMBRANE_EMAIL_SUBJECT
+#### MEMBRANE_EMAIL_SUBJECT
 
 - **Description:** Subject line for outgoing emails.
 - **Example:** `MEMBRANE_EMAIL_SUBJECT=Please Verify Your Email Address`
+- **Reference:** https://learn.microsoft.com/en-us/python/api/overview/azure/communication-email-readme?view=azure-python#send-an-email-message
 
-### MEMBRANE_EMAIL_SEND_SUCCESS
+#### MEMBRANE_EMAIL_SEND_HTML_TEMPLATE
+
+- **Description:** HTML template for outgoing emails.
+- **Example:** `MEMBRANE_EMAIL_SEND_HTML_TEMPLATE=<html><h1>{}</h1></html>`
+- **Reference:** https://learn.microsoft.com/en-us/python/api/overview/azure/communication-email-readme?view=azure-python#send-an-email-message
+
+#### MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME
+
+- **Description:** Time in seconds to wait for email sending.
+- **Example:** `MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME=2`
+- **Reference:** https://learn.microsoft.com/en-us/python/api/azure-core/azure.core.polling.lropoller?view=azure-python#azure-core-polling-lropoller-wait
+
+#### MEMBRANE_EMAIL_SEND_TIMEOUT_SECONDS
+
+- **Description:** Time in seconds before email sending times out.
+- **Example:** `MEMBRANE_EMAIL_SEND_TIMEOUT_SECONDS=30`
+
+#### MEMBRANE_EMAIL_SEND_SUCCESS
 
 - **Description:** Message when an email is successfully sent.
 - **Example:** `MEMBRANE_EMAIL_SEND_SUCCESS=Valid email address, Email sent with JWT link`
 
-### MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME
-
-- **Description:** Time in seconds to wait for email sending.
-- **Example:** `MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME=2`
-
-### MEMBRANE_EMAIL_SEND_HTML_TEMPLATE
-
-- **Description:** HTML template for outgoing emails.
-- **Example:** `MEMBRANE_EMAIL_SEND_HTML_TEMPLATE=<html><h1>{}</h1></html>`
-
-### MEMBRANE_GENERIC_500_ERROR_FIELD
+#### MEMBRANE_GENERIC_500_ERROR_FIELD
 
 - **Description:** Field name for generic 500 errors.
 - **Example:** `MEMBRANE_GENERIC_500_ERROR_FIELD=error`
 
-### MEMBRANE_GENERIC_500_ERROR
+#### MEMBRANE_GENERIC_500_ERROR
 
 - **Description:** Generic error message for 500 status code.
 - **Example:** `MEMBRANE_GENERIC_500_ERROR=An unexpected error occurred. Please try again later.`
+
+#### MEMBRANE_LOGGING_LEVEL
+
+- **Description:** Specifies the logging level for the application.
+- **Example:** `MEMBRANE_LOGGING_LEVEL=DEBUG`
+- **Reference:** https://docs.python.org/3/library/logging.html#logging-levels
+
+#### MEMBRANE_LOGGING_FORMAT
+
+- **Description:** Format for the log messages.
+- **Example:** `MEMBRANE_LOGGING_FORMAT=[%(asctime)s] [%(levelname)s] [%(filename)s:%(lineno)d:%(funcName)s] - %(message)s`
+- **Reference:** https://docs.python.org/3/library/logging.html#logrecord-attributes
+
+
+#### MEMBRANE_HEALTH_MESSAGE
+
+- **Description:** Health check message for the server.
+- **Example:** `MEMBRANE_HEALTH_MESSAGE=ok`
+
+#### MEMBRANE_WORKERS
+
+- **Description:** Number of hypercorn worker processes for the application.
+- **Example:** `MEMBRANE_WORKERS=4`
+- **Reference:** https://hypercorn.readthedocs.io/en/latest/how_to_guides/configuring.html
+
+#### MEMBRANE_KEEP_ALIVE
+
+- **Description:** Hypercorn keep-alive timeout in seconds for the server.
+- **Example:** `MEMBRANE_KEEP_ALIVE=5`
+- **Reference:** https://hypercorn.readthedocs.io/en/latest/how_to_guides/configuring.html
 
 Once you have defined all these variables, save and close the `.env` file. The Quart application will now use these environment variable values when it runs.
 
@@ -277,48 +303,40 @@ You can now interact with both the main Quart application and the client simulat
 3. Populate the following variables in the `.env` file. Example for tests and dev:
 
    ```env
-   # Server settings
+   # Mandatory
    MEMBRANE_CORS_ALLOWED_ORIGINS=http://localhost:3000
-   MEMBRANE_LOGGING_LEVEL=DEBUG
-   MEMBRANE_LOGGING_FORMAT=[%(asctime)s] [%(levelname)s] [%(filename)s:%(lineno)d:%(funcName)s] - %(message)s
-   MEMBRANE_HEALTH_MESSAGE=ok
-
-   # Frontend
    MEMBRANE_FRONTEND=http://localhost:3000
-
-   # Secrets and Keys
-   MEMBRANE_SECRET_KEY=#your secret key generated at step 2
+   MEMBRANE_SECRET_KEY=your_secret_key
    MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY=keys/
    MEMBRANE_SERVER_PRIVATE_KEY=keys/server_private_key.pem
    MEMBRANE_SERVER_PUBLIC_KEY=keys/server_public_key.pem
-   MEMBRANE_TEST_APP_PUBLIC_KEY=keys/testapp1_public_key.pem
-   MEMBRANE_TEST_APP_PRIVATE_KEY=keys/testapp1_private_key.pem
+   MEMBRANE_COMM_CONNECTION_STRING=your_azure_communication_service_connection_string
+   MEMBRANE_SENDER_EMAIL=DoNotReply@your_domain.com
 
-   # JWT and Session settings
-   MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS=300
-   MEMBRANE_JWT_EXPIRE_SECONDS=300
-   MEMBRANE_SESSION_LIFETIME_SECONDS=300
-   MEMBRANE_SESSION_COOKIE_SECURE=true
-   MEMBRANE_SESSION_TYPE=null
-   MEMBRANE_TOKEN_BLACKLIST=
-   MEMBRANE_APP_ID_FIELD=app_id
-   MEMBRANE_DATA_FIELD=data
-   MEMBRANE_REDIRECT_URL_FIELD=redirect_url
-   MEMBRANE_ENCODE_ALGORITHM=RS256
-
-   # Email settings
-   MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN=^[a-zA-Z0-9._+]+@(?:gc\.ca|canada\.ca|inspection\.gc\.ca)$
-   MEMBRANE_COMM_CONNECTION_STRING=#your azure communication service connection string
-   MEMBRANE_SENDER_EMAIL=#your azure mailfrom email address
-   MEMBRANE_EMAIL_SUBJECT=Please Verify You Email Address
-   MEMBRANE_EMAIL_SEND_SUCCESS=Valid email address, Email sent with JWT link
-   MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME=2
-   MEMBRANE_EMAIL_SEND_HTML_TEMPLATE=<html><h1>{}</h1></html>
-
-
-   # Error messages
-   MEMBRANE_GENERIC_500_ERROR_FIELD=error
-   MEMBRANE_GENERIC_500_ERROR=An unexpected error occurred. Please try again later.
+   # Optional
+   # MEMBRANE_JWT_ACCESS_TOKEN_EXPIRE_SECONDS=
+   # MEMBRANE_JWT_EXPIRE_SECONDS=
+   # MEMBRANE_SESSION_LIFETIME_SECONDS=
+   # MEMBRANE_SESSION_COOKIE_SECURE=
+   # MEMBRANE_SESSION_TYPE=
+   # MEMBRANE_TOKEN_BLACKLIST=
+   # MEMBRANE_APP_ID_FIELD=
+   # MEMBRANE_DATA_FIELD=
+   # MEMBRANE_REDIRECT_URL_FIELD=
+   # MEMBRANE_ENCODE_ALGORITHM=
+   # MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN=
+   # MEMBRANE_EMAIL_SUBJECT=
+   # MEMBRANE_EMAIL_SEND_SUCCESS=
+   # MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME=
+   # MEMBRANE_EMAIL_SEND_TIMEOUT_SECONDS=
+   # MEMBRANE_EMAIL_SEND_HTML_TEMPLATE=
+   # MEMBRANE_GENERIC_500_ERROR_FIELD=
+   # MEMBRANE_GENERIC_500_ERROR=
+   # MEMBRANE_LOGGING_LEVEL=
+   # MEMBRANE_LOGGING_FORMAT=
+   # MEMBRANE_HEALTH_MESSAGE=
+   # MEMBRANE_WORKERS=
+   # MEMBRANE_KEEP_ALIVE=
    ```
 
 ### 3. Running the App with Docker
