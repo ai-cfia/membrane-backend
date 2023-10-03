@@ -9,24 +9,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 import jwt
-from dotenv import load_dotenv
+from quart import Quart
 
-load_dotenv(".env.tests")
-
-
-class DummyEmailClientException(Exception):
-    pass
-
-
-class DummyEmailClient:
-    def __getattr__(self, name):
-        raise DummyEmailClientException(
-            "This is a dummy email client, method not supported."
-        )
-
-
-with patch("app_create.EmailClient.from_connection_string") as mock:
-    mock.return_value = DummyEmailClient()
+with patch("app_create.create_app") as mock_create_app:
+    mock_create_app.return_value = Quart(__name__)
     from app import app
 
 from emails import EmailConfig  # noqa: E402
@@ -93,6 +79,7 @@ class TestConfig(unittest.TestCase):
         self.app.config["EMAIL_CONFIG"] = self.email_config
         self.app.config["TESTING"] = True
         self.app.config["SERVER_NAME"] = "login.example.com"
+        self.app.config["MEMBRANE_FRONTEND"] = "membrane-frontend.ca"
 
     def setup_payload(self):
         self.payload = {
