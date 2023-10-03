@@ -126,6 +126,7 @@ Now, define each of the following variables:
 
 - **Description:** Specifies the storage for session data. Options: 'filesystem', 'redis', 'memcached', etc.
 - **Example:** `MEMBRANE_SESSION_TYPE=null`
+- **Reference** https://flask-session.readthedocs.io/en/latest/config.html
 
 #### MEMBRANE_TOKEN_BLACKLIST
 
