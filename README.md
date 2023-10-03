@@ -64,6 +64,7 @@ Now, define each of the following variables:
 - **Description:** List of origins allowed for cross-origin requests (CORS).
 - **Format:** Comma-separated list of origins.
 - **Example:** `MEMBRANE_CORS_ALLOWED_ORIGINS=http://localhost:3000`
+- **Reference:** https://pypi.org/project/quart-cors/
 
 #### MEMBRANE_FRONTEND
 
@@ -74,6 +75,7 @@ Now, define each of the following variables:
 
 - **Description:** The secret key used for creating encrypted tokens.
 - **Example:** `MEMBRANE_SECRET_KEY=your_secret_key`
+- **Reference:** https://flask.palletsprojects.com/en/latest/config/#builtin-configuration-values
 
 #### MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY
 
@@ -94,11 +96,14 @@ Now, define each of the following variables:
 
 - **Description:** Connection string for the Azure communication service.
 - **Example:** `MEMBRANE_COMM_CONNECTION_STRING=your_azure_communication_service_connection_string`
+- **Reference:** https://learn.microsoft.com/en-us/python/api/azure-communication-email/azure.communication.email.emailclient?view=azure-python#azure-communication-email-emailclient-from-connection-string
+
 
 #### MEMBRANE_SENDER_EMAIL
 
 - **Description:** Email address that will send emails.
 - **Example:** `MEMBRANE_SENDER_EMAIL=DoNotReply@your_domain.com`
+- **Reference:** https://learn.microsoft.com/en-us/python/api/overview/azure/communication-email-readme?view=azure-python#send-an-email-message
 
 ### Optional Variables
 
@@ -116,11 +121,13 @@ Now, define each of the following variables:
 
 - **Description:** Duration (in seconds) after which the session will expire.
 - **Example:** `MEMBRANE_SESSION_LIFETIME_SECONDS=300`
+- **Reference** https://flask-session.readthedocs.io/en/latest/config.html
 
 #### MEMBRANE_SESSION_COOKIE_SECURE
 
 - **Description:** Indicates if the session cookie should be secure.
 - **Example:** `MEMBRANE_SESSION_COOKIE_SECURE=true`
+- **Reference** https://flask-session.readthedocs.io/en/latest/config.html
 
 #### MEMBRANE_SESSION_TYPE
 
@@ -153,6 +160,7 @@ Now, define each of the following variables:
 
 - **Description:** Algorithm used for encoding JWT.
 - **Example:** `MEMBRANE_ENCODE_ALGORITHM=RS256`
+- **Reference:** https://pyjwt.readthedocs.io/en/latest/algorithms.html#digital-signature-algorithms
 
 #### MEMBRANE_ALLOWED_EMAIL_DOMAINS_PATTERN
 
@@ -163,26 +171,29 @@ Now, define each of the following variables:
 
 - **Description:** Subject line for outgoing emails.
 - **Example:** `MEMBRANE_EMAIL_SUBJECT=Please Verify Your Email Address`
+- **Reference:** https://learn.microsoft.com/en-us/python/api/overview/azure/communication-email-readme?view=azure-python#send-an-email-message
 
-#### MEMBRANE_EMAIL_SEND_SUCCESS
+#### MEMBRANE_EMAIL_SEND_HTML_TEMPLATE
 
-- **Description:** Message when an email is successfully sent.
-- **Example:** `MEMBRANE_EMAIL_SEND_SUCCESS=Valid email address, Email sent with JWT link`
+- **Description:** HTML template for outgoing emails.
+- **Example:** `MEMBRANE_EMAIL_SEND_HTML_TEMPLATE=<html><h1>{}</h1></html>`
+- **Reference:** https://learn.microsoft.com/en-us/python/api/overview/azure/communication-email-readme?view=azure-python#send-an-email-message
 
 #### MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME
 
 - **Description:** Time in seconds to wait for email sending.
 - **Example:** `MEMBRANE_EMAIL_SEND_POLLER_WAIT_TIME=2`
+- **Reference:** https://learn.microsoft.com/en-us/python/api/azure-core/azure.core.polling.lropoller?view=azure-python#azure-core-polling-lropoller-wait
 
 #### MEMBRANE_EMAIL_SEND_TIMEOUT_SECONDS
 
 - **Description:** Time in seconds before email sending times out.
 - **Example:** `MEMBRANE_EMAIL_SEND_TIMEOUT_SECONDS=30`
 
-#### MEMBRANE_EMAIL_SEND_HTML_TEMPLATE
+#### MEMBRANE_EMAIL_SEND_SUCCESS
 
-- **Description:** HTML template for outgoing emails.
-- **Example:** `MEMBRANE_EMAIL_SEND_HTML_TEMPLATE=<html><h1>{}</h1></html>`
+- **Description:** Message when an email is successfully sent.
+- **Example:** `MEMBRANE_EMAIL_SEND_SUCCESS=Valid email address, Email sent with JWT link`
 
 #### MEMBRANE_GENERIC_500_ERROR_FIELD
 
@@ -198,11 +209,14 @@ Now, define each of the following variables:
 
 - **Description:** Specifies the logging level for the application.
 - **Example:** `MEMBRANE_LOGGING_LEVEL=DEBUG`
+- **Reference:** https://docs.python.org/3/library/logging.html#logging-levels
 
 #### MEMBRANE_LOGGING_FORMAT
 
 - **Description:** Format for the log messages.
 - **Example:** `MEMBRANE_LOGGING_FORMAT=[%(asctime)s] [%(levelname)s] [%(filename)s:%(lineno)d:%(funcName)s] - %(message)s`
+- **Reference:** https://docs.python.org/3/library/logging.html#logrecord-attributes
+
 
 #### MEMBRANE_HEALTH_MESSAGE
 
@@ -211,13 +225,15 @@ Now, define each of the following variables:
 
 #### MEMBRANE_WORKERS
 
-- **Description:** Number of worker processes for the application.
+- **Description:** Number of hypercorn worker processes for the application.
 - **Example:** `MEMBRANE_WORKERS=4`
+- **Reference:** https://hypercorn.readthedocs.io/en/latest/how_to_guides/configuring.html
 
 #### MEMBRANE_KEEP_ALIVE
 
-- **Description:** Keep-alive timeout in seconds for the server.
+- **Description:** Hypercorn keep-alive timeout in seconds for the server.
 - **Example:** `MEMBRANE_KEEP_ALIVE=5`
+- **Reference:** https://hypercorn.readthedocs.io/en/latest/how_to_guides/configuring.html
 
 Once you have defined all these variables, save and close the `.env` file. The Quart application will now use these environment variable values when it runs.
 
