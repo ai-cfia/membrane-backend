@@ -12,3 +12,5 @@ Quart-JWT-Extended==0.1.0
 Quart-Session==2.0.0
 requests==2.31.0
 Werkzeug==2.3.0
+pydantic-settings
+pydantic[email]
