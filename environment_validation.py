@@ -19,25 +19,27 @@ def validate_environment_settings(
     - ValueError: If any of the provided settings are invalid.
     """
 
-    # Check the client public keys directory
-    if not CLIENT_PUBLIC_KEYS_DIRECTORY.exists():
-        raise ValueError(
-            f"The directory {CLIENT_PUBLIC_KEYS_DIRECTORY} for public keys does not "
-            "exist. Please specify a valid directory."
-        )
-
     # Check the server private key
-    if not SERVER_PRIVATE_KEY.exists() :
-        raise ValueError(f"The specified server private key file {SERVER_PRIVATE_KEY} does not exist.")
-    elif SERVER_PRIVATE_KEY.is_dir():
-        raise ValueError(f"The specified server private key file {SERVER_PRIVATE_KEY} is a directory.")
+    if not SERVER_PRIVATE_KEY.exists():
+        raise ValueError(
+            f"The specified server private key file {SERVER_PRIVATE_KEY} "
+            "does not exist.")
+
+    if SERVER_PRIVATE_KEY.is_dir():
+        raise ValueError(
+            f"The specified server private key file {SERVER_PRIVATE_KEY} "
+            "is a directory.")
 
     # Check the server public key
+    if not SERVER_PUBLIC_KEY.exists():
+        raise ValueError(
+            f"The specified server public key file {SERVER_PUBLIC_KEY} "
+            "does not exist.")
 
-    if not SERVER_PUBLIC_KEY.exists() :
-        raise ValueError(f"The specified server public key file {SERVER_PUBLIC_KEY} does not exist.")
-    elif SERVER_PUBLIC_KEY.is_dir():
-        raise ValueError(f"The specified server public key file {SERVER_PUBLIC_KEY} is a directory.")
+    if SERVER_PUBLIC_KEY.is_dir():
+        raise ValueError(
+            f"The specified server public key file {SERVER_PUBLIC_KEY} "
+            "is a directory.")
 
     # Check the redirect URL to Membrane Frontend
     if not FRONTEND_URL:
