@@ -4,6 +4,7 @@ def validate_environment_settings(
     """
     Validate the environment settings required for the application.
 
+
     Args:
     - CLIENT_PUBLIC_KEYS_DIRECTORY (Path): The directory containing the client public
     keys.
@@ -26,18 +27,17 @@ def validate_environment_settings(
         )
 
     # Check the server private key
-    if not SERVER_PRIVATE_KEY.exists() or SERVER_PRIVATE_KEY.is_dir():
-        raise ValueError(
-            f"The specified server private key file {SERVER_PRIVATE_KEY} does not "
-            "exist or is a directory. Please provide a valid path."
-        )
+    if not SERVER_PRIVATE_KEY.exists() :
+        raise ValueError(f"The specified server private key file {SERVER_PRIVATE_KEY} does not exist.")
+    elif SERVER_PRIVATE_KEY.is_dir():
+        raise ValueError(f"The specified server private key file {SERVER_PRIVATE_KEY} is a directory.")
 
     # Check the server public key
-    if not SERVER_PUBLIC_KEY.exists() or SERVER_PUBLIC_KEY.is_dir():
-        raise ValueError(
-            f"The specified server public key file {SERVER_PUBLIC_KEY} does not exist "
-            "or is a directory. Please provide a valid path."
-        )
+
+    if not SERVER_PUBLIC_KEY.exists() :
+        raise ValueError(f"The specified server public key file {SERVER_PUBLIC_KEY} does not exist.")
+    elif SERVER_PUBLIC_KEY.is_dir():
+        raise ValueError(f"The specified server public key file {SERVER_PUBLIC_KEY} is a directory.")
 
     # Check the redirect URL to Membrane Frontend
     if not FRONTEND_URL:
