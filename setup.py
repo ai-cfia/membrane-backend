@@ -6,8 +6,6 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setup(
     name="membrane-backend",
     version="0.1",
-    packages=find_packages(include=["test_package_kNzQoY"]),
+    packages=find_packages(include=["membrane"]),
     install_requires=[],
-    long_description=long_description,
-    long_description_content_type="text/markdown",
 )
