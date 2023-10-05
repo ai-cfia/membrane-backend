@@ -3,7 +3,7 @@ name: Docker GCP deployment
 on:
   push:
     branches:
-      - main
+      - redat97/issue74
   pull_request:
 
 jobs:
