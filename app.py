@@ -1,22 +1,15 @@
 """
-CFIA Louis Backend Flask Application
+CFIA Membrane Backend Quart Application
 """
-import logging
-import os
 import traceback
-import uuid
-from datetime import timedelta
-from pathlib import Path
 
-from dotenv import load_dotenv
-from flask import Flask, jsonify, request
-from flask_cors import CORS
-from flask_jwt_extended import JWTManager
+from quart import jsonify, request
 
-from environment_validation import validate_environment_settings
+from app_create import create_app
+from emails import EmailConfig, send_email
 from error_handlers import register_error_handlers
-from flask_session import Session
 from jwt_utils import (
+    JWTConfig,
     JWTError,
     decode_client_jwt_token,
     generate_email_verification_token,
@@ -25,139 +18,77 @@ from jwt_utils import (
 )
 from request_helpers import EmailError, validate_email_from_request
 
-logging.basicConfig(level=logging.DEBUG)
+app = create_app()
 
-# Initialize Flask application
-app = Flask(__name__)
-
-# Allow CORS for your Flask app
-CORS(app, resources={r"/*": {"origins": "*", "supports_credentials": True}})
-
-# Load environment variables
-load_dotenv()
-
-# Configuration for JWT and session settings
-# Fetch secret key or generate a new one if not available
-SECRET_KEY = os.getenv("SECRET_KEY", str(uuid.uuid4()))
-# Set secret key configurations for JWT and Flask session
-app.config["JWT_SECRET_KEY"] = SECRET_KEY
-app.config["SECRET_KEY"] = SECRET_KEY
-
-# Configure JWT expiration from environment variable with default of 30 minutes
-jwt_expiration_minutes = int(os.environ.get("JWT_ACCESS_TOKEN_EXPIRES_MINUTES", 30))
-
-# Configure session lifetime from environment variable with default of 30 minutes
-session_lifetime_minutes = int(os.environ.get("SESSION_LIFETIME_MINUTES", 30))
-app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=session_lifetime_minutes)
-
-# Configure session cookie to be secure (sent over HTTPS only)
-app.config["SESSION_COOKIE_SECURE"] = True
-
-# Initialize JWT Manager with the app
-jwt = JWTManager(app)
-
-# Configuration paths and URLs retrieved from environment variables # TODO: Set default values
-CLIENT_PUBLIC_KEYS_DIRECTORY = Path(
-    os.getenv("CLIENT_PUBLIC_KEYS_DIRECTORY", "keys/public_keys")
-)
-SERVER_PRIVATE_KEY = Path(os.getenv("SERVER_PRIVATE_KEY", ""))
-SERVER_PUBLIC_KEY = Path(os.getenv("SERVER_PUBLIC_KEY", ""))
-REDIRECT_URL_TO_LOUIS_FRONTEND = os.getenv("REDIRECT_URL_TO_LOUIS_FRONTEND", "")
-
-# Validate the environment settings
-validate_environment_settings(
-    CLIENT_PUBLIC_KEYS_DIRECTORY,
-    SERVER_PRIVATE_KEY,
-    SERVER_PUBLIC_KEY,
-    REDIRECT_URL_TO_LOUIS_FRONTEND,
-)
-
-# A basic in-memory store for simplicity;
-TOKEN_BLACKLIST = set()
-
-# Configure Flask-Session
-app.config["SESSION_TYPE"] = os.getenv("SESSION_TYPE", default="filesystem")
-Session(app)
-
-# Register custom error handlers for the Flask app
+# Register custom error handlers for the Quart app
 register_error_handlers(app)
 
 
 @app.before_request
-def log_request_info():
+async def log_request_info():
     """Log incoming request headers and body for debugging purposes."""
     app.logger.debug("Headers: %s", request.headers)
-    app.logger.debug("Body: %s", request.get_data())
+    app.logger.debug("Body: %s", await request.get_data())
 
 
-@app.route("/health")
-def health_check():
-    return "ok", 200
+@app.route("/health", methods=["GET"])
+async def health():
+    return app.config["MEMBRANE_HEALTH_MESSAGE"], 200
 
 
 @app.route("/authenticate", methods=["GET", "POST"])
-def authenticate():
+async def authenticate():
     """
     Authenticate the client request based on various possible inputs.
 
     This endpoint can handle three types of requests:
     1. If the request contains both a valid client JWT and an email:
         - Validates the provided email.
-        - Generates a verification token and sends a verification email to the provided address.
+        - Generates a verification token and sends a verification email to the provided
+        address.
     2. If the request only contains a valid client JWT without an email:
-        - Redirects the user to the Louis login frontend.
+        - Redirects the user to the Membrane frontend.
     3. If client JWT decoding fails:
-        - Attempts to decode using the verification token method, to validate a user attempting
-          to confirm their email.
+        - Attempts to decode using the verification token method, to validate a user
+        attempting to confirm their email.
 
     Returns:
-        JSON response or redirect, depending on the provided inputs and their validation.
+        JSON response or redirect, depending on the provided inputs and their
+        validation.
     """
     app.logger.debug("Entering authenticate route")
+    jwt_config: JWTConfig = app.config["JWT_CONFIG"]
+    email_config: EmailConfig = app.config["EMAIL_CONFIG"]
 
     try:
-        clientapp_token = request.args.get("token")
-        clientapp_decoded_token = decode_client_jwt_token(
-            clientapp_token, CLIENT_PUBLIC_KEYS_DIRECTORY
-        )
+        client_app_token = request.args.get("token")
+        client_app_decoded_token = decode_client_jwt_token(client_app_token, jwt_config)
 
-        # If the request contains an email parameter provided by the user.
-        if clientapp_decoded_token and request.is_json:
-            # Validate email.
-            email = validate_email_from_request(request.get_json().get("email"))
-            # Generate token expiration timestamp.
-            verification_url = generate_email_verification_token(
+        if client_app_decoded_token and request.is_json:
+            email = validate_email_from_request(
+                (await request.get_json()).get("email"),
+                email_config.validation_pattern,
+            )
+            body = generate_email_verification_token(
                 email,
-                clientapp_decoded_token["redirect_url"],
-                jwt_expiration_minutes,
-                SERVER_PRIVATE_KEY,
+                client_app_decoded_token[jwt_config.redirect_url_field],
+                jwt_config,
             )
 
-            # Construct the verification URL which includes the new JWT token.
-            # Debug purpose; remove or comment out for production.
-            print(verification_url)
-            # TODO: Send email to user containing verification url.
-
-            return (
-                jsonify({"message": "Valid email address. Email sent with JWT link."}),
-                200,
+            app.add_background_task(send_email, email, body, email_config, app.logger)
+            return jsonify({"message": email_config.email_send_success}), 200
+        else:
+            return login_redirect_with_client_jwt(
+                app.config["MEMBRANE_FRONTEND"],
+                client_app_token,
+                jwt_config,
             )
-
-        # Redirect user if they reload the link without providing an email.
-        return login_redirect_with_client_jwt(
-            clientapp_token,
-            CLIENT_PUBLIC_KEYS_DIRECTORY,
-            REDIRECT_URL_TO_LOUIS_FRONTEND,
-        )
 
     except (JWTError, EmailError) as error:
         app.logger.error("Error occurred: %s\n%s", error, traceback.format_exc())
         try:
-            app.logger.info(
-                "Attempting to redirect_to_client_app_using_verification_token"
-            )
             return redirect_to_client_app_using_verification_token(
-                clientapp_token, SERVER_PUBLIC_KEY, TOKEN_BLACKLIST
+                client_app_token, jwt_config
             )
         except JWTError as inner_error:
             app.logger.error(
@@ -165,12 +96,9 @@ def authenticate():
                 type(inner_error),
                 traceback.format_exc(),
             )
-            # TODO: Redirect to Louis main site if token is invalid.
+            # TODO: Redirect to membrane main site if token is invalid.
 
-    return (
-        jsonify({"error": "Invalid request method"}),
-        405,
-    )  # 405 is for Method Not Allowed
+    return jsonify({"error": "Invalid request method"}), 405
 
 
 if __name__ == "__main__":

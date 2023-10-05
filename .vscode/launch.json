@@ -2,19 +2,17 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Flask",
+            "name": "Python: Quart",
             "type": "python",
             "request": "launch",
-            "module": "flask",
+            "module": "quart",
             "env": {
-                "FLASK_APP": "app.py",
-                "FLASK_ENV": "development",
-                "FLASK_DEBUG": "1"
+                "QUART_APP": "app.py",
+                "QUART_ENV": "development",
+                "QUART_DEBUG": "1"
             },
             "args": [
                 "run",
-                "--no-debugger",
-                "--no-reload"
             ],
             "jinja": true
         }
