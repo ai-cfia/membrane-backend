@@ -1,18 +1,14 @@
 import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from functools import wraps
 from urllib.parse import urljoin
 
 import jwt
 from flask import Blueprint, Flask, redirect, request, url_for
-from flask_login import (
-    LoginManager,
-    UserMixin,
-    current_user,
-    login_required,
-    login_user,
-    logout_user,
-)
+from flask_login import LoginManager, UserMixin
+from flask_login import current_user as membrane_current_user
+from flask_login import login_required, login_user, logout_user
 
 ALGORITHM = "RS256"
 DEFAULT_TOKEN_EXPIRATION = 3600
@@ -48,6 +44,7 @@ class Configuration:
     token_expiration = DEFAULT_TOKEN_EXPIRATION
     custom_claims = {}
     redirect_path = DEFAULT_REDIRECT_PATH
+    require_login = False
 
 
 # Initialize variables
@@ -62,13 +59,27 @@ def configure(
     token_expiration: int | None = None,
     custom_claims: dict | None = None,
     redirect_path: str | None = None,
+    require_login: bool = True,
 ):
+    if not require_login:
+        return
     _login_manager.init_app(app)
     _config.certificate = _load_certificate(certificate)
     _config.token_expiration = token_expiration or DEFAULT_TOKEN_EXPIRATION
     _config.custom_claims = custom_claims or {}
     _check_custom_claims(_config.custom_claims)
     _config.redirect_path = redirect_path or DEFAULT_REDIRECT_PATH
+    _config.require_login = require_login
+
+
+def membrane_login_required(f):
+    @wraps(f)
+    def decorated_view(*args, **kwargs):
+        if _config.require_login:
+            return login_required(f)(*args, **kwargs)
+        return f(*args, **kwargs)
+
+    return decorated_view
 
 
 def _check_custom_claims(custom_claims: dict):
@@ -147,13 +158,13 @@ def _redirect_for_authentication():
 
 @blueprint.route("/login")
 def login():
-    if current_user:
+    if membrane_current_user:
         return redirect(_redirect_url())
     return _redirect_for_authentication()
 
 
 @blueprint.route("/logout")
-@login_required
+@membrane_login_required
 def logout():
     logout_user()
     return redirect(_redirect_url())
