@@ -30,11 +30,11 @@ from membrane import configure
 
 # Configuration
 configure(
+    active=True
     app=flask_app_instance,
     certificate=path_to_certificate,
     token_expiration=3600,
     redirect_path='/',
-    require_login=True
 )
 ```
 
@@ -44,7 +44,7 @@ If you wish to add login and logout routes to your Flask application, you can si
 
 ```python
 from flask import Flask
-from membrane import blueprint as membrane_blueprint
+from membrane.client.flask import blueprint as membrane_blueprint
 
 app = Flask(__name__)
 app.register_blueprint(membrane_blueprint)
@@ -55,34 +55,10 @@ app.register_blueprint(membrane_blueprint)
 You can use `membrane_login_required` decorator to protect your routes.
 
 ```python
-from membrane import membrane_login_required
+from membrane.client.flask import membrane_login_required
 
 @app.route('/protected')
 @membrane_login_required
 def protected_route():
     return 'This is a protected route.'
-```
-
-### Custom Tokens
-
-You can create custom tokens using `create_custom_token` function.
-
-```python
-from membrane import create_custom_token
-
-custom_token = create_custom_token(
-    redirect_url='http://example.com',
-    token_expiration=3600,
-    custom_claims={}
-)
-```
-
-### Verify Tokens
-
-You can verify tokens using `verify_token` function.
-
-```python
-from membrane import verify_token
-
-decoded_token = verify_token(token_string)
 ```
