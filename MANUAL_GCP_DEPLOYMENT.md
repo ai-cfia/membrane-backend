@@ -9,7 +9,7 @@ This guide outlines the steps to deploy manually membrane-backend to Google Clou
 
 3. Enable ["Secret Manager"](https://cloud.google.com/secret-manager) service on your GCP project.
 
-4. After running the script from the [ReadMe](https://github.com/ai-cfia/membrane-backend/blob/main/README.md) file, you should have 4 keys on your project. If you have the public key(s) from your client(s), you can go ahead and delete the one you generated and replace it with the one(s) you have. In the "Secret Manager", create a new secret and for each key, give it the right name and upload it.
+4. After running the script from the [ReadMe](README.md) file, you should have 4 keys on your project. If you have the public key(s) from your client(s), you can go ahead and delete the one you generated and replace it with the one(s) you have. In the "Secret Manager", create a new secret and for each key, give it the right name and upload it.
 
 5. On Cloud Run, click on the name of the application you want to mount your secrets as volume on to and click on "Edit & Deploy New Revision" on the top of the screen.
 
