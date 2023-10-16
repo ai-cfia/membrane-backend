@@ -2,6 +2,17 @@
 
 This guide outlines the steps to deploy manually membrane-backend to Google Cloud Run (GCP). It uses secrets as volume which allows you to mount your secret keys directly into the service's filesystem, which gives a secure and effective way to manage the application's sensitive information.
 
+This backend application needs to manage keys for communcation with different clients here is a breakdown
+- Server Key Pair:
+
+    * Private Key: Used by the server to decrypt information encrypted with its public key. Must be stored securely and never exposed.
+
+    * Public Key: Shared with clients or other entities that need to encrypt data intended only for the server.
+Client Key Pairs:
+
+- Private Key: Remains with the client. Used to decrypt data or sign transactions.
+- Public Key: Shared with the server and possibly other clients. The server uses this to encrypt data specifically for that client or verify its signature.
+
 ## Steps
  1. Setup your GCP environment. You can use the instructions [GCP Project Setup Guide](https://github.com/ai-cfia/devops/blob/main/gcp-setup-script/gcp-project-setup-guide.md)
 
