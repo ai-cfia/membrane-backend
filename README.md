@@ -1,6 +1,10 @@
 ## Setting Up a Quart Application
+>**Note:** If you're using a `devcontainer`, the steps involving virtual environments are not necessary. However, for developers not using `devcontainer`, the virtual environment setup remains relevant.
+
 
 Follow the instructions below to set up a Quart application in your environment:
+
+### Setting Up a Quart Application (Without DevContainer)
 
 ### 1. Check Pip Version:
 
@@ -261,7 +265,10 @@ Ensure that the Membrane Frontend React application is running, ideally on `loca
 
 You can now interact with both the main Quart application and the client simulator to validate the entire authentication flow.
 
-## Running the app from dockerfile
+## Using DevContainer
+
+For those wishing to use `devcontainer`, everything is already set up in `.devcontainer/devcontainer.json`. You simply need to open the project in the container (as we usually do).
+
 
 ### 1. Generate Server, Client Keys, and Environment Files
 
