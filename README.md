@@ -267,7 +267,7 @@ You can now interact with both the main Quart application and the client simulat
 
 ## Using DevContainer
 
-For those wishing to use `devcontainer`, everything is already set up in `.devcontainer/devcontainer.json`. You simply need to open the project in the container (as we usually do).
+For those wishing to use `devcontainer`, everything is already set up in `.devcontainer/devcontainer.json`. You simply need to open the project in the container.
 
 
 ### 1. Generate Server, Client Keys, and Environment Files
