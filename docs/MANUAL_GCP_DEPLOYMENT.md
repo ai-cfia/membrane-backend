@@ -24,6 +24,6 @@ Client Key Pairs:
 
 5. On Cloud Run, click on the name of the application you want to mount your secrets as volume on to and click on "Edit & Deploy New Revision" on the top of the screen.
 
-![GCP Deploy & Edit](docs/gcp-edit-&-deploy.pngg)
+![GCP Deploy & Edit](/docs/gcp-edit-&-deploy.png)
 
 6. Scroll down all the way down to "Secrets" and add the link to each key. To find the link to your keys, go back to your key manager and click on any key. On top of the "Overview", you should see the link to your key. Copy paste the path to each key to Cloud Run.
