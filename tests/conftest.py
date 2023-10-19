@@ -9,10 +9,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 import jwt
-from quart import Quart
+from flask import Flask
 
 with patch("app_create.create_app") as mock_create_app:
-    mock_create_app.return_value = Quart(__name__)
+    mock_create_app.return_value = Flask(__name__)
     from app import app
 
 from emails import EmailConfig  # noqa: E402
@@ -101,8 +101,8 @@ class TestConfig(unittest.TestCase):
             payload, self.client_private_key, jwt_config.algorithm, headers
         )
 
-    async def sample_verification_token(self):
-        async with self.app.app_context():
+    def sample_verification_token(self):
+        with self.app.app_context():
             verification_url = generate_email_verification_token(
                 "test@inspection.gc.ca", "https://www.example.com/", self.jwt_config
             )

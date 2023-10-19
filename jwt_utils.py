@@ -9,7 +9,7 @@ from pathlib import Path
 
 from jwt import decode, encode
 from jwt import exceptions as jwt_exceptions
-from quart import redirect, url_for
+from flask import redirect, url_for
 
 DEFAULT_CLIENT_PUBLIC_KEYS_DIRECTORY = "./keys/client"
 DEFAULT_SERVER_PUBLIC_KEY = "./keys/server_public.pem"

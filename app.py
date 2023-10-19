@@ -1,9 +1,9 @@
 """
-CFIA Membrane Backend Quart Application
+CFIA Membrane Backend Flask Application
 """
 import traceback
 
-from quart import jsonify, request
+from flask import jsonify, request
 
 from app_create import create_app
 from emails import EmailConfig, send_email
@@ -20,24 +20,24 @@ from request_helpers import EmailError, validate_email_from_request
 
 app = create_app()
 
-# Register custom error handlers for the Quart app
+# Register custom error handlers for the Flask app
 register_error_handlers(app)
 
 
 @app.before_request
-async def log_request_info():
+def log_request_info():
     """Log incoming request headers and body for debugging purposes."""
     app.logger.debug("Headers: %s", request.headers)
-    app.logger.debug("Body: %s", await request.get_data())
+    app.logger.debug("Body: %s", request.get_data())
 
 
 @app.route("/health", methods=["GET"])
-async def health():
+def health():
     return app.config["MEMBRANE_HEALTH_MESSAGE"], 200
 
 
 @app.route("/authenticate", methods=["GET", "POST"])
-async def authenticate():
+def authenticate():
     """
     Authenticate the client request based on various possible inputs.
 
@@ -66,7 +66,7 @@ async def authenticate():
 
         if client_app_decoded_token and request.is_json:
             email = validate_email_from_request(
-                (await request.get_json()).get("email"),
+                request.get_json().get("email"),
                 email_config.validation_pattern,
             )
             body = generate_email_verification_token(
@@ -75,7 +75,7 @@ async def authenticate():
                 jwt_config,
             )
 
-            app.add_background_task(send_email, email, body, email_config, app.logger)
+            send_email(email, body, email_config, app.logger)
             return jsonify({"message": email_config.email_send_success}), 200
         else:
             return login_redirect_with_client_jwt(
