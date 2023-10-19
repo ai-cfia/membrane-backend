@@ -1,4 +1,4 @@
-from quart import jsonify
+from flask import jsonify
 
 
 # pylint: disable=unused-variable
