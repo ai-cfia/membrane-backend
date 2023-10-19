@@ -98,12 +98,17 @@ Now, define each of the following variables:
 - **Example:** `MEMBRANE_COMM_CONNECTION_STRING=your_azure_communication_service_connection_string`
 - **Reference:** https://learn.microsoft.com/en-us/python/api/azure-communication-email/azure.communication.email.emailclient?view=azure-python#azure-communication-email-emailclient-from-connection-string
 
-
 #### MEMBRANE_SENDER_EMAIL
 
 - **Description:** Email address that will send emails.
 - **Example:** `MEMBRANE_SENDER_EMAIL=DoNotReply@your_domain.com`
 - **Reference:** https://learn.microsoft.com/en-us/python/api/overview/azure/communication-email-readme?view=azure-python#send-an-email-message
+
+#### MEMBRANE_SESSION_TYPE
+
+- **Description:** Specifies the storage for session data. Options: 'filesystem', 'redis', 'memcached', etc.
+- **Example:** `MEMBRANE_SESSION_TYPE=filesystem`
+- **Reference** https://flask-session.readthedocs.io/en/latest/config.html
 
 ### Optional Variables
 
@@ -127,12 +132,6 @@ Now, define each of the following variables:
 
 - **Description:** Indicates if the session cookie should be secure.
 - **Example:** `MEMBRANE_SESSION_COOKIE_SECURE=true`
-- **Reference** https://flask-session.readthedocs.io/en/latest/config.html
-
-#### MEMBRANE_SESSION_TYPE
-
-- **Description:** Specifies the storage for session data. Options: 'filesystem', 'redis', 'memcached', etc.
-- **Example:** `MEMBRANE_SESSION_TYPE=null`
 - **Reference** https://flask-session.readthedocs.io/en/latest/config.html
 
 #### MEMBRANE_TOKEN_BLACKLIST
