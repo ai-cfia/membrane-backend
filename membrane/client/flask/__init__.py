@@ -12,7 +12,8 @@ from flask_login import login_required as _login_required
 
 ALGORITHM = "RS256"
 DEFAULT_TOKEN_EXPIRATION = 300
-DEFAULT_REDIRECT_PATH = "/"
+DEFAULT_LANDING_PAGE_PATH = "/"
+DEFAULT_LOGOUT_PAGE_PATH = "/"
 RESERVED_CLAIMS = {"alg", "app_id", "exp", "redirect_url", "typ"}
 DEFAULT_REQUIRE_LOGIN = True
 
@@ -41,7 +42,8 @@ class Configuration:
     certificate: Certificate = None
     token_expiration = DEFAULT_TOKEN_EXPIRATION
     custom_claims = {}
-    redirect_path = DEFAULT_REDIRECT_PATH
+    landing_page_path = DEFAULT_LANDING_PAGE_PATH
+    logout_page_path = DEFAULT_LOGOUT_PAGE_PATH
     require_login = DEFAULT_REQUIRE_LOGIN
 
 
@@ -80,7 +82,8 @@ def configure_membrane(
     certificate: str | dict | None,
     token_expiration: int | None = None,
     custom_claims: dict | None = None,
-    redirect_path: str | None = None,
+    landing_page_path: str | None = None,
+    logout_page_path: str | None = None,
 ):
     """
     Configures membrane for a Flask app with various options.
@@ -106,7 +109,8 @@ def configure_membrane(
         _config.token_expiration = token_expiration or DEFAULT_TOKEN_EXPIRATION
         _config.custom_claims = custom_claims or {}
         _check_custom_claims(_config.custom_claims)
-        _config.redirect_path = redirect_path or DEFAULT_REDIRECT_PATH
+        _config.landing_page_path = landing_page_path or DEFAULT_LANDING_PAGE_PATH
+        _config.logout_page_path = logout_page_path or DEFAULT_LOGOUT_PAGE_PATH
     return app
 
 
@@ -123,9 +127,13 @@ def _get_exp_date(token_expiration: int | None) -> int:
     return int((datetime.utcnow() + timedelta(seconds=exp)).timestamp())
 
 
-def _redirect_url() -> str:
-    """Get redirect URL."""
-    return urljoin(request.url_root, _config.redirect_path)
+def _landing_page_url() -> str:
+    """Get the landing page URL."""
+    return urljoin(request.url_root, _config.landing_page_path)
+
+def _logout_page_url() -> str:
+    """Get the logout page URL."""
+    return urljoin(request.url_root, _config.logout_page_path)
 
 
 def _create_custom_token(
@@ -137,7 +145,7 @@ def _create_custom_token(
     _check_custom_claims(custom_claims or {})
     payload = {
         "app_id": _config.certificate.app_id,
-        "redirect_url": redirect_url or _redirect_url(),
+        "redirect_url": redirect_url or _landing_page_url(),
         "exp": _get_exp_date(token_expiration),
     }
     payload.update(custom_claims or _config.custom_claims)
@@ -213,7 +221,7 @@ def _redirect_for_authentication():
 def login():
     """Login route."""
     if hasattr(membrane_current_user, "id"):
-        return redirect(_redirect_url())
+        return redirect(_landing_page_url())
     return _redirect_for_authentication()
 
 
@@ -222,4 +230,4 @@ def login():
 def logout():
     """Logout route."""
     logout_user()
-    return redirect(_redirect_url())
+    return redirect(_logout_page_url())

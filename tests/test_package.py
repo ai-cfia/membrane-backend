@@ -47,7 +47,8 @@ class Config:
     PERMANENT_SESSION_LIFETIME = 300
     TOKEN_EXPIRES_IN_SECONDS = 300
     APP_ID = "test_app"
-    REDIRECT_PATH = "/"
+    LANDING_PAGE_PATH = "/"
+    LOGOUT_PAGE_PATH = "/"
     TESTING = True
 
 
@@ -72,7 +73,8 @@ def create_test_app(config: Config):
         certificate=certificate_data if config.MEMBRANE_SERVER else None,
         token_expiration=config.TOKEN_EXPIRES_IN_SECONDS,
         custom_claims=None,
-        redirect_path=config.REDIRECT_PATH,
+        landing_page_path=config.LANDING_PAGE_PATH,
+        logout_page_path=config.LOGOUT_PAGE_PATH,
     )
 
     @app.route("/")
@@ -107,7 +109,7 @@ class TestMembranePackage(unittest.TestCase):
             alg = self.config.ALGORITHM
             app_id = self.config.APP_ID
             key = self.config.CLIENT_PUBLIC_KEY
-            redirect_url = "http://localhost" + self.config.REDIRECT_PATH
+            redirect_url = "http://localhost" + self.config.LANDING_PAGE_PATH
             # Request
             response = self.client.get("/")
             # Check redirect and redirect url
@@ -163,7 +165,7 @@ class TestMembranePackage(unittest.TestCase):
             payload = {
                 "sub": test_email,
                 "exp": exp,
-                self.config.REDIRECT_PATH: redirect_url,
+                self.config.LANDING_PAGE_PATH: redirect_url,
             }
             token = jwt.encode(
                 payload, self.config.SERVER_PRIVATE_KEY, algorithm=self.config.ALGORITHM
