@@ -6,10 +6,9 @@ from urllib.parse import urljoin
 
 import jwt
 from flask import Blueprint, Flask, redirect, request, url_for
-from flask_login import LoginManager, UserMixin
+from flask_login import LoginManager, UserMixin, login_user, logout_user
 from flask_login import current_user as membrane_current_user
 from flask_login import login_required as _login_required
-from flask_login import login_user, logout_user
 
 ALGORITHM = "RS256"
 DEFAULT_TOKEN_EXPIRATION = 300
@@ -77,33 +76,31 @@ class JWTExpiredError(JWTError):
 
 
 def configure_membrane(
-    active: bool,
     app: Flask,
-    certificate: str | dict,
+    certificate: str | dict | None,
     token_expiration: int | None = None,
     custom_claims: dict | None = None,
     redirect_path: str | None = None,
 ):
     """
-    Configures membrane for Flask app with various options.
+    Configures membrane for a Flask app with various options.
 
     Args:
-        active (bool): If True, enables membrane's login requirement.
-        app (Flask): Flask application to attach membrane to.
-        certificate (str | dict): Path to JSON file or dict with
-            certificate info.
-        token_expiration (int | None, optional): JWT token validity
-            in seconds. Defaults to DEFAULT_TOKEN_EXPIRATION.
+        app (Flask): The Flask application to attach membrane to.
+        certificate (str | dict | None): Path to JSON file or dict with
+            certificate info. Disables login if None.
+        token_expiration (int | None, optional): JWT token validity in
+            seconds. Defaults to DEFAULT_TOKEN_EXPIRATION if None.
         custom_claims (dict | None, optional): Extra claims for JWT.
             Defaults to empty dict.
         redirect_path (str | None, optional): URL path for post-auth
             redirect. Defaults to DEFAULT_REDIRECT_PATH.
 
     Returns:
-        Flask: Configured Flask app.
+        Flask: The configured Flask app.
     """
-    _config.require_login = active
-    if active:
+    _config.require_login = certificate is not None
+    if _config.require_login:
         _login_manager.init_app(app)
         _config.certificate = Certificate.load(certificate)
         _config.token_expiration = token_expiration or DEFAULT_TOKEN_EXPIRATION

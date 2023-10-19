@@ -68,9 +68,8 @@ def create_test_app(config: Config):
         "auth_url": config.MEMBRANE_SERVER,
     }
     configure_membrane(
-        active=bool(config.MEMBRANE_SERVER),
         app=app,
-        certificate=certificate_data,
+        certificate=certificate_data if config.MEMBRANE_SERVER else None,
         token_expiration=config.TOKEN_EXPIRES_IN_SECONDS,
         custom_claims=None,
         redirect_path=config.REDIRECT_PATH,
@@ -90,7 +89,10 @@ def create_test_app(config: Config):
 
 
 class TestMembranePackage(unittest.TestCase):
+    """Test Membrane package functionalities."""
+
     def setUp(self):
+        """Set up Flask test client and other configurations."""
         self.config = Config()
         self.app = create_test_app(self.config)
         self.client = self.app.test_client(True)
@@ -180,6 +182,25 @@ class TestMembranePackage(unittest.TestCase):
                 self.assertEqual(response_data, f"Hello, {test_email}!")
 
     # TODO: test membrane blueprint routes
+
+
+class TestMembranePackageWithDisabledLogin(unittest.TestCase):
+    """Test scenarios when Membrane login is disabled."""
+
+    def setUp(self):
+        """Set up Flask test client with disabled Membrane login."""
+        self.config = Config()
+        self.config.MEMBRANE_SERVER = None  # Disable login
+        self.app = create_test_app(self.config)
+        self.client = self.app.test_client(True)
+
+    def test_endpoint_without_login(self):
+        """Test that the endpoint is accessible when login is disabled."""
+        with self.app.test_request_context():
+            response = self.client.get("/")
+            self.assertEqual(response.status_code, 200)
+            response_data = response.data.decode("utf-8")
+            self.assertEqual(response_data, "Hello, world!")
 
 
 if __name__ == "__main__":
