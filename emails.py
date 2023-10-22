@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from logging import Logger
 
@@ -23,6 +24,10 @@ class EmailSendingFailedError(EmailsException):
 
 class PollingTimeoutError(EmailsException):
     """Custom Exception for polling time-out during email sending."""
+
+
+class InvalidEmailError(EmailsException):
+    """Custom Exception for invalid email."""
 
 
 class UnexpectedEmailSendError(EmailsException):
@@ -76,3 +81,11 @@ def send_email(recipient_email, body: str, config: EmailConfig, logger: Logger) 
     except Exception as e:
         logger.exception(e)
         raise UnexpectedEmailSendError(f"An unexpected error occurred: {e}") from e
+
+
+def validate_email(email, pattern):
+    """Check if the provided email is valid."""
+
+    if not re.match(pattern, email):
+        raise InvalidEmailError(f"Invalid email address: {email}")
+    return True

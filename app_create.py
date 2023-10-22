@@ -7,11 +7,13 @@ from azure.communication.email import EmailClient
 from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
-from flask_session import Session
+from flask_login import LoginManager
 
 import emails
 import jwt_utils
 from environment_validation import validate_environment_settings
+from flask_session import Session
+from membrane.client.flask import User
 
 DEFAULT_MEMBRANE_LOGGING_LEVEL = "DEBUG"
 DEFAULT_MEMBRANE_LOGGING_FORMAT = (
@@ -161,5 +163,15 @@ def create_app():
         format=app.config["MEMBRANE_LOGGING_FORMAT"],
         level=getattr(logging, app.config["MEMBRANE_LOGGING_LEVEL"]),
     )
+    # Flask-Login setup
+    login_manager = LoginManager()
+    login_manager.init_app(app)
+    login_manager.login_view = "login_page"
+
+    @login_manager.user_loader
+    def load_user(email):
+        """Load user for Flask-Login."""
+        return User(email)
+
     Session(app)
     return app
