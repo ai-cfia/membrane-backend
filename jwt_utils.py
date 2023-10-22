@@ -3,27 +3,15 @@ Utilities for encoding, decoding, and validating JWT tokens.
 """
 import logging
 from copy import copy
-from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from pathlib import Path
 
 from flask import redirect, url_for
 from flask_login import login_user
 from jwt import decode, encode
 from jwt import exceptions as jwt_exceptions
+from config import JWTConfig
 
 from membrane.client.flask import User
-
-DEFAULT_CLIENT_PUBLIC_KEYS_DIRECTORY = "./keys/client"
-DEFAULT_SERVER_PUBLIC_KEY = "./keys/server_public.pem"
-DEFAULT_SERVER_PRIVATE_KEY = "./keys/server_private.pem"
-DEFAULT_APP_ID_FIELD = "app_id"
-DEFAULT_REDIRECT_URL_FIELD = "redirect_url"
-DEFAULT_ENCODE_ALGORITHM = "RS256"
-DEFAULT_DATA_FIELD = "data"
-DEFAULT_JWT_ACCESS_TOKEN_EXPIRE_SECONDS = 300
-DEFAULT_JWT_EXPIRE_SECONDS = 300
-DEFAULT_TOKEN_BLACKLIST = ""
 
 
 class JWTError(Exception):
@@ -60,21 +48,6 @@ class InvalidEmailTokenError(JWTError):
 
 class JWTExpired(JWTError):
     """Raised when the provided token is expired."""
-
-
-@dataclass
-class JWTConfig:
-    client_public_keys_folder: Path
-    server_public_key: Path
-    server_private_key: Path
-    app_id_field: str = DEFAULT_APP_ID_FIELD
-    redirect_url_field: str = DEFAULT_REDIRECT_URL_FIELD
-    algorithm: str = DEFAULT_ENCODE_ALGORITHM
-    data_field: str = DEFAULT_DATA_FIELD
-    jwt_access_token_expire_seconds: int = DEFAULT_JWT_ACCESS_TOKEN_EXPIRE_SECONDS
-    jwt_expire_seconds: int = DEFAULT_JWT_EXPIRE_SECONDS
-    token_blacklist: set = field(default_factory=set)
-    token_type: str = "JWT"
 
 
 def decode_client_jwt_token(jwt_token, config: JWTConfig):
@@ -195,7 +168,7 @@ def generate_email_verification_token_url(
         config.redirect_url_field: redirect_url,
     }
     token = server_encode(payload, config)
-    return url_for("verify_email", token=token, _external=True)
+    return url_for("main.verify_email", token=token, _external=True)
 
 
 def server_encode(payload: dict, config: JWTConfig):
