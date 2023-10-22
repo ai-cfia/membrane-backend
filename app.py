@@ -1,22 +1,26 @@
 """
 CFIA Membrane Backend Flask Application
 """
-import traceback
-
-from flask import jsonify, request
+from flask import jsonify, redirect, request
+from flask_login import current_user
 
 from app_create import create_app
-from emails import EmailConfig, send_email
+from emails import (
+    EmailConfig,
+    InvalidEmailError,
+    send_email,
+    validate_email,
+)
 from error_handlers import register_error_handlers
 from jwt_utils import (
     JWTConfig,
     JWTError,
     decode_client_jwt_token,
-    generate_email_verification_token,
+    generate_client_redirect_url,
+    generate_email_verification_token_url,
     login_redirect_with_client_jwt,
     redirect_to_client_app_using_verification_token,
 )
-from request_helpers import EmailError, validate_email_from_request
 
 app = create_app()
 
@@ -36,69 +40,68 @@ def health():
     return app.config["MEMBRANE_HEALTH_MESSAGE"], 200
 
 
-@app.route("/authenticate", methods=["GET", "POST"])
-def authenticate():
-    """
-    Authenticate the client request based on various possible inputs.
+@app.route("/login_page")
+def login_page():
+    return redirect(app.config["MEMBRANE_FRONTEND"])
 
-    This endpoint can handle three types of requests:
-    1. If the request contains both a valid client JWT and an email:
-        - Validates the provided email.
-        - Generates a verification token and sends a verification email to the provided
-        address.
-    2. If the request only contains a valid client JWT without an email:
-        - Redirects the user to the Membrane frontend.
-    3. If client JWT decoding fails:
-        - Attempts to decode using the verification token method, to validate a user
-        attempting to confirm their email.
 
-    Returns:
-        JSON response or redirect, depending on the provided inputs and their
-        validation.
-    """
-    app.logger.debug("Entering authenticate route")
-    jwt_config: JWTConfig = app.config["JWT_CONFIG"]
-    email_config: EmailConfig = app.config["EMAIL_CONFIG"]
-
+@app.route("/login", methods=["POST"])
+def login():
+    """"""
+    # TODO: login without token
     try:
-        client_app_token = request.args.get("token")
-        client_app_decoded_token = decode_client_jwt_token(client_app_token, jwt_config)
+        token = request.args["token"]
+        email = request.json["email"].lower()
+        jwt_config: JWTConfig = app.config["JWT_CONFIG"]
+        decoded_token = decode_client_jwt_token(token, jwt_config)
+        email_config: EmailConfig = app.config["EMAIL_CONFIG"]
+        validate_email(email, email_config.validation_pattern)
+        body = generate_email_verification_token_url(
+            email, decoded_token[jwt_config.redirect_url_field], jwt_config
+        )
+        send_email(email, body, email_config, app.logger)
+        return jsonify({"message": email_config.email_send_success}), 200
+    except KeyError:
+        app.logger.error("KeyError: Missing 'token' or 'email' in request.")
+        return jsonify({"error": "Missing 'token' or 'email' in request."}), 400
+    except JWTError as jwt_error:
+        app.logger.error(f"JWTError: {jwt_error}")
+        return jsonify({"error": "Invalid or expired token."}), 401
+    except InvalidEmailError as email_error:
+        app.logger.error(f"EmailError: {email_error}")
+        return jsonify({"error": "Invalid email"}), 400
 
-        if client_app_decoded_token and request.is_json:
-            email = validate_email_from_request(
-                request.get_json().get("email"),
-                email_config.validation_pattern,
-            )
-            body = generate_email_verification_token(
-                email,
-                client_app_decoded_token[jwt_config.redirect_url_field],
-                jwt_config,
-            )
 
-            send_email(email, body, email_config, app.logger)
-            return jsonify({"message": email_config.email_send_success}), 200
-        else:
-            return login_redirect_with_client_jwt(
-                app.config["MEMBRANE_FRONTEND"],
-                client_app_token,
-                jwt_config,
+@app.route("/authenticate", methods=["GET"])
+def authenticate():
+    """"""
+    try:
+        client_token = request.args["token"]
+        jwt_config: JWTConfig = app.config["JWT_CONFIG"]
+        decoded_token = decode_client_jwt_token(client_token, jwt_config)
+        if current_user.is_authenticated:
+            redirect_url = decoded_token[jwt_config.redirect_url_field]
+            client_redirect_url = generate_client_redirect_url(
+                current_user.id, redirect_url, jwt_config
             )
+            return redirect(client_redirect_url)
+        return login_redirect_with_client_jwt(
+            app.config["MEMBRANE_FRONTEND"], client_token, jwt_config
+        )
+    except KeyError:
+        return jsonify({"error": "Missing token"}), 400
+    except JWTError as jwt_error:
+        app.logger.error(f"JWT error: {jwt_error}")
+        return jsonify({"error": "Invalid token"}), 401
 
-    except (JWTError, EmailError) as error:
-        app.logger.error("Error occurred: %s\n%s", error, traceback.format_exc())
-        try:
-            return redirect_to_client_app_using_verification_token(
-                client_app_token, jwt_config
-            )
-        except JWTError as inner_error:
-            app.logger.error(
-                "Secondary error encountered during redirect. Type of error: %s\n%s",
-                type(inner_error),
-                traceback.format_exc(),
-            )
-            # TODO: Redirect to membrane main site if token is invalid.
 
-    return jsonify({"error": "Invalid request method"}), 405
+@app.route("/verify_email", methods=["GET"])
+def verify_email():
+    """"""
+    token = request.args["token"]
+    jwt_config: JWTConfig = app.config["JWT_CONFIG"]
+    return redirect_to_client_app_using_verification_token(token, jwt_config)
+    # TODO: handle exceptions
 
 
 if __name__ == "__main__":
