@@ -1,6 +1,6 @@
+import glob
 import os
 from dataclasses import dataclass
-from pathlib import Path
 
 from azure.communication.email import EmailClient
 from dotenv import load_dotenv
@@ -12,14 +12,9 @@ DEFAULT_LOGGING_FORMAT = (
 DEFAULT_HEALTH_MESSAGE = "ok"
 DEFAULT_SESSION_LIFETIME_SECONDS = 300
 DEFAULT_SESSION_COOKIE_SECURE = "true"
-DEFAULT_SESSION_TYPE = "null"
+DEFAULT_SESSION_TYPE = "filesystem"
 DEFAULT_GENERIC_500_ERROR_FIELD = "error"
 DEFAULT_GENERIC_500_ERROR = "An unexpected error occurred. Please try again later."
-
-
-DEFAULT_CLIENT_PUBLIC_KEYS_DIRECTORY = "./keys/client"
-DEFAULT_SERVER_PUBLIC_KEY = "./keys/server_public.pem"
-DEFAULT_SERVER_PRIVATE_KEY = "./keys/server_private.pem"
 DEFAULT_APP_ID_FIELD = "app_id"
 DEFAULT_REDIRECT_URL_FIELD = "redirect_url"
 DEFAULT_ENCODE_ALGORITHM = "RS256"
@@ -27,8 +22,6 @@ DEFAULT_DATA_FIELD = "data"
 DEFAULT_JWT_ACCESS_TOKEN_EXPIRE_SECONDS = 300
 DEFAULT_JWT_EXPIRE_SECONDS = 300
 DEFAULT_TOKEN_BLACKLIST = ""
-
-
 DEFAULT_HTML_CONTENT = "<html><h1>{}</h1></html>"
 DEFAULT_POLLER_WAIT_SECONDS = 10
 DEFAULT_TIMEOUT_SECONDS = 180
@@ -42,20 +35,33 @@ DEFAULT_EMAIL_SUBJECT = "Please Verify You Email Address"
 load_dotenv()
 
 
+def read_key(key_env_variable, default=None):
+    """"""
+    with open(os.getenv(key_env_variable, default), "rb") as file:
+        return file.read()
+
+
+def load_client_keys(env_variable):
+    """Load all keys from a directory using the full filenames as keys."""
+    directory = os.getenv(env_variable)
+    keys = {}
+    pattern = os.path.join(directory, "*.pem")
+    for key_file in glob.glob(pattern):
+        file_name = os.path.basename(key_file)
+        with open(key_file, "r") as f:
+            keys[file_name] = f.read()
+    return keys
+
+
 @dataclass
 class JWTConfig:
-    client_public_keys_folder = Path(
-        os.getenv(
-            "MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY",
-            DEFAULT_CLIENT_PUBLIC_KEYS_DIRECTORY,
-        )
-    )
-    server_public_key = Path(
-        os.getenv("MEMBRANE_SERVER_PUBLIC_KEY", DEFAULT_SERVER_PUBLIC_KEY)
-    )
-    server_private_key = Path(
-        os.getenv("MEMBRANE_SERVER_PRIVATE_KEY", DEFAULT_SERVER_PRIVATE_KEY)
-    )
+    """"""
+
+    client_keys = load_client_keys("MEMBRANE_CLIENT_PUBLIC_KEYS_DIRECTORY")
+    private_key_suffix = os.getenv("MEMBRANE_PRIVATE_KEY_SUFFIX")
+    public_key_suffix = os.getenv("MEMBRANE_PUBLIC_KEY_SUFFIX")
+    server_public_key = read_key("MEMBRANE_SERVER_PUBLIC_KEY")
+    server_private_key = read_key("MEMBRANE_SERVER_PRIVATE_KEY")
     app_id_field = os.getenv("MEMBRANE_APP_ID_FIELD", DEFAULT_APP_ID_FIELD)
     redirect_url_field = os.getenv(
         "MEMBRANE_REDIRECT_URL_FIELD", DEFAULT_REDIRECT_URL_FIELD
@@ -79,6 +85,8 @@ class JWTConfig:
 
 @dataclass
 class EmailConfig:
+    """"""
+
     email_client = EmailClient.from_connection_string(
         os.getenv("MEMBRANE_COMM_CONNECTION_STRING")
     )
@@ -106,6 +114,8 @@ class EmailConfig:
 
 @dataclass
 class AppConfig:
+    """"""
+
     LOGGING_LEVEL = os.getenv("MEMBRANE_LOGGING_LEVEL", DEFAULT_LOGGING_LEVEL)
     LOGGING_FORMAT = os.getenv("MEMBRANE_LOGGING_FORMAT", DEFAULT_LOGGING_FORMAT)
     HEALTH_MESSAGE = os.getenv("MEMBRANE_HEALTH_MESSAGE", DEFAULT_HEALTH_MESSAGE)

@@ -9,8 +9,9 @@ from flask import redirect, url_for
 from flask_login import login_user
 from jwt import decode, encode
 from jwt import exceptions as jwt_exceptions
-from config import JWTConfig
+from jwt import get_unverified_header
 
+from config import JWTConfig
 from membrane.client.flask import User
 
 
@@ -55,26 +56,19 @@ def decode_client_jwt_token(jwt_token, config: JWTConfig):
         raise JWTError("No JWT token provided in query parameters.")
     try:
         # Temporarily decode the token to fetch the app_id
-        unverified_decoded_token = decode(
-            jwt_token, options={"verify_signature": False}
-        )
-        if config.app_id_field not in unverified_decoded_token:
-            raise JWTAppIdMissingError("No app id in JWT payload.")
+        # TODO: anti pattern ask for forgiveness?
+        header = get_unverified_header(jwt_token)
+        if config.app_id_field not in header:
+            raise JWTAppIdMissingError("No app id in JWT header.")
 
-        app_id = unverified_decoded_token[config.app_id_field]
-
-        # Look for a corresponding public key file
-        public_key_path = config.client_public_keys_folder / f"{app_id}_public_key.pem"
-
-        if not public_key_path.exists():
+        app_id = header[config.app_id_field]
+        public_key_name = f"{app_id}{config.public_key_suffix}"
+        if public_key_name not in config.client_keys:
             raise JWTPublicKeyNotFoundError(
-                f"Public key not found for app_id: {app_id} {unverified_decoded_token}."
+                f"Public key not found for app_id: {app_id}."
             )
 
-        with public_key_path.open("r") as key_file:
-            public_key = key_file.read()
-
-        # Decode the token using the fetched public key
+        public_key = config.client_keys[public_key_name]
         decoded_token = decode(jwt_token, public_key, algorithms=[config.algorithm])
         # Retrieve the redirect URL.
         redirect_url = decoded_token[config.redirect_url_field]
@@ -82,7 +76,6 @@ def decode_client_jwt_token(jwt_token, config: JWTConfig):
             raise JWTError("No redirect URL found in Token.")
 
         expired_time = decoded_token["exp"]
-
         # Get current time
         current_time = datetime.utcnow()
         current_timestamp = int(current_time.timestamp())
@@ -130,10 +123,10 @@ def decode_email_verification_token(jwt_token: str, config: JWTConfig):
         raise JWTError("No JWT token provided in query parameters.")
     if jwt_token in config.token_blacklist:
         raise BlacklistedTokenError("This token has been blacklisted.")
-    with config.server_public_key.open("r") as key_file:
-        public_key = key_file.read()
     try:
-        decoded_token = decode(jwt_token, public_key, algorithms=[config.algorithm])
+        decoded_token = decode(
+            jwt_token, config.server_public_key, algorithms=[config.algorithm]
+        )
         if config.redirect_url_field not in decoded_token:
             raise JWTError("No redirect URL found in token.")
         expired_time = decoded_token["exp"]
@@ -153,7 +146,7 @@ def generate_client_redirect_url(email: str, redirect_url: str, config: JWTConfi
         "exp": expiration_timestamp,
         config.redirect_url_field: redirect_url,
     }
-    token = server_encode(payload, config)
+    token = encode_token_with_server_pk(payload, config)
     return f"{redirect_url}?token={token}"
 
 
@@ -167,17 +160,17 @@ def generate_email_verification_token_url(
         "exp": expiration_timestamp,
         config.redirect_url_field: redirect_url,
     }
-    token = server_encode(payload, config)
+    token = encode_token_with_server_pk(payload, config)
     return url_for("main.verify_email", token=token, _external=True)
 
 
-def server_encode(payload: dict, config: JWTConfig):
-    if not config.server_private_key.exists():
+def encode_token_with_server_pk(payload: dict, config: JWTConfig):
+    if not config.server_private_key:
         raise JWTPrivateKeyNotFoundError("Private key not found")
-    with config.server_private_key.open("r") as key_file:
-        private_key = key_file.read()
     try:
-        jwt_token = encode(payload, private_key, algorithm=config.algorithm)
+        jwt_token = encode(
+            payload, config.server_private_key, algorithm=config.algorithm
+        )
         return jwt_token
     except Exception as error:
         raise JWTError(f"Failed to encode JWT token. Error: {error}") from error

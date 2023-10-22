@@ -6,15 +6,16 @@ from urllib.parse import urljoin
 
 import jwt
 from flask import Blueprint, Flask, redirect, request, url_for
-from flask_login import LoginManager, UserMixin, login_user, logout_user
+from flask_login import LoginManager, UserMixin
 from flask_login import current_user as membrane_current_user
 from flask_login import login_required as _login_required
+from flask_login import login_user, logout_user
 
 ALGORITHM = "RS256"
 DEFAULT_TOKEN_EXPIRATION = 300
 DEFAULT_LANDING_PAGE_PATH = "/"
 DEFAULT_LOGOUT_PAGE_PATH = "/"
-RESERVED_CLAIMS = {"alg", "app_id", "exp", "redirect_url", "typ"}
+RESERVED_CLAIMS = set(["alg", "app_id", "exp", "redirect_url", "typ"])
 DEFAULT_REQUIRE_LOGIN = True
 
 
@@ -130,6 +131,7 @@ def _get_exp_date(token_expiration: int | None) -> int:
 def _landing_page_url() -> str:
     """Get the landing page URL."""
     return urljoin(request.url_root, _config.landing_page_path)
+
 
 def _logout_page_url() -> str:
     """Get the logout page URL."""
