@@ -6,14 +6,15 @@ from urllib.parse import urljoin
 
 import jwt
 from flask import Blueprint, Flask, redirect, request, url_for
-from flask_login import LoginManager, UserMixin, login_user, logout_user
+from flask_login import LoginManager, UserMixin
 from flask_login import current_user as membrane_current_user
 from flask_login import login_required as _login_required
+from flask_login import login_user, logout_user
 
 ALGORITHM = "RS256"
 DEFAULT_TOKEN_EXPIRATION = 300
-DEFAULT_LANDING_ENDPOINT = "/"
-DEFAULT_LOGGED_OUT_ENDPOINT = "/"
+DEFAULT_LANDING_URL = "/"
+DEFAULT_LOGGED_OUT_URL = "/"
 RESERVED_CLAIMS = set(["alg", "app_id", "exp", "redirect_url", "typ"])
 DEFAULT_REQUIRE_LOGIN = True
 
@@ -42,8 +43,8 @@ class Configuration:
     certificate: Certificate = None
     token_expiration = DEFAULT_TOKEN_EXPIRATION
     custom_claims = {}
-    landing_endpoint = DEFAULT_LANDING_ENDPOINT
-    logged_out_endpoint = DEFAULT_LOGGED_OUT_ENDPOINT
+    landing_url = DEFAULT_LANDING_URL
+    logged_out_url = DEFAULT_LOGGED_OUT_URL
     require_login = DEFAULT_REQUIRE_LOGIN
 
 
@@ -82,8 +83,8 @@ def configure_membrane(
     certificate: str | dict | None,
     token_expiration: int | None = None,
     custom_claims: dict | None = None,
-    landing_endpoint: str | None = None,
-    logged_out_endpoint: str | None = None,
+    landing_url: str | None = None,
+    logged_out_url: str | None = None,
 ):
     """
     Configures membrane for a Flask app with various options.
@@ -109,8 +110,8 @@ def configure_membrane(
         _config.token_expiration = token_expiration or DEFAULT_TOKEN_EXPIRATION
         _config.custom_claims = custom_claims or {}
         _check_custom_claims(_config.custom_claims)
-        _config.landing_endpoint = landing_endpoint or DEFAULT_LANDING_ENDPOINT
-        _config.logged_out_endpoint = logged_out_endpoint or DEFAULT_LOGGED_OUT_ENDPOINT
+        _config.landing_url = landing_url or DEFAULT_LANDING_URL
+        _config.logged_out_url = logged_out_url or DEFAULT_LOGGED_OUT_URL
     return app
 
 
@@ -127,14 +128,14 @@ def _get_exp_date(token_expiration: int | None) -> int:
     return int((datetime.utcnow() + timedelta(seconds=exp)).timestamp())
 
 
-def _landing_endpoint() -> str:
+def _landing_url() -> str:
     """Get the landing endpoint."""
-    return urljoin(request.url_root, _config.landing_endpoint)
+    return urljoin(request.url_root, _config.landing_url)
 
 
-def _logged_out_endpoint() -> str:
+def _logged_out_url() -> str:
     """Get the logged out endpoint."""
-    return urljoin(request.url_root, _config.logged_out_endpoint)
+    return urljoin(request.url_root, _config.logged_out_url)
 
 
 def _create_custom_token(
@@ -146,7 +147,7 @@ def _create_custom_token(
     _check_custom_claims(custom_claims or {})
     payload = {
         "app_id": _config.certificate.app_id,
-        "redirect_url": redirect_url or _landing_endpoint(),
+        "redirect_url": redirect_url or _landing_url(),
         "exp": _get_exp_date(token_expiration),
     }
     payload.update(custom_claims or _config.custom_claims)
@@ -229,7 +230,7 @@ def _redirect_for_logout(user_id):
 def login():
     """Login route."""
     if membrane_current_user.is_authenticated:
-        return redirect(_landing_endpoint())
+        return redirect(_landing_url())
     return _redirect_for_authentication()
 
 
@@ -237,7 +238,7 @@ def login():
 def logout():
     """Logout route."""
     if not membrane_current_user.is_authenticated:
-        return redirect(_logged_out_endpoint())
+        return redirect(_logged_out_url())
     user_id = membrane_current_user.id
     logout_user()
     return _redirect_for_logout(user_id)
