@@ -16,7 +16,7 @@ APPID=$1
 mkdir -p keys
 
 # Generate client keys with APPID
-openssl genpkey -algorithm RSA -out "keys/${APPID}_private_key.pem" >> add-client.log 2>&1
-openssl rsa -pubout -in "keys/${APPID}_private_key.pem" -out "keys/${APPID}_public_key.pem" >> add-client.log 2>&1
+openssl genpkey -algorithm RSA -out "keys/${APPID}-private-key.pem" >> add-client.log 2>&1
+openssl rsa -pubout -in "keys/${APPID}-private-key.pem" -out "keys/${APPID}-public-key.pem" >> add-client.log 2>&1
 
 echo "Client keys for ${APPID} generated in 'keys' folder."

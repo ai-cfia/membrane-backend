@@ -7,8 +7,8 @@ set -x  # Debug mode
 mkdir -p keys
 
 # Generate server keys
-openssl genpkey -algorithm RSA -out keys/server_private_key.pem >> init.log 2>&1
-openssl rsa -pubout -in keys/server_private_key.pem -out keys/server_public_key.pem >> init.log 2>&1
+openssl genpkey -algorithm RSA -out keys/server-private-key.pem >> init.log 2>&1
+openssl rsa -pubout -in keys/server-private-key.pem -out keys/server-public-key.pem >> init.log 2>&1
 
 echo "Server keys generated in 'keys' folder."
 
