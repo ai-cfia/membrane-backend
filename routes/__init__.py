@@ -1,5 +1,7 @@
+from functools import wraps
+
 from flask import Blueprint, current_app, jsonify, redirect, request
-from flask_login import current_user
+from flask_login import current_user, logout_user
 
 from config import EmailConfig, JWTConfig
 from emails import InvalidEmailError, send_email, validate_email
@@ -11,16 +13,39 @@ from jwt_utils import (
     login_redirect_with_client_jwt,
     redirect_to_client_app_using_verification_token,
 )
-from membrane.client.flask import membrane_current_user, membrane_login_required
+
+MISSING_TOKEN_OR_EMAIL_ERROR = "Missing token or email in request."
+INVALID_OR_EXPIRED_TOKEN_ERROR = "Invalid or expired token."
+INVALID_EMAIL_ERROR = "Invalid email"
+LOGOUT_SUCCESS_MESSAGE = "Logged out successfully"
+MISSING_TOKEN_ERROR = "Missing token"
+INVALID_TOKEN_ERROR = "Invalid token"
 
 blueprint = Blueprint("main", __name__)
 
 
-@blueprint.route("/")
-@membrane_login_required
-def example_endpoint():
-    user = membrane_current_user.id if hasattr(membrane_current_user, "id") else "world"
-    return f"Hello, {user}!"
+@blueprint.before_request
+def log_request_info():
+    current_app.logger.debug("Headers: %s", request.headers)
+    current_app.logger.debug("Body: %s", request.get_data())
+
+
+def error_handler(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except KeyError as e:
+            current_app.logger.error(f"KeyError: {str(e)}")
+            return jsonify({"error": MISSING_TOKEN_OR_EMAIL_ERROR}), 400
+        except JWTError as e:
+            current_app.logger.error(f"JWTError: {str(e)}")
+            return jsonify({"error": INVALID_OR_EXPIRED_TOKEN_ERROR}), 401
+        except InvalidEmailError as e:
+            current_app.logger.error(f"EmailError: {str(e)}")
+            return jsonify({"error": INVALID_EMAIL_ERROR}), 400
+
+    return wrapper
 
 
 @blueprint.route("/health", methods=["GET"])
@@ -34,59 +59,51 @@ def login_page():
 
 
 @blueprint.route("/login", methods=["POST"])
+@error_handler
 def login():
     """"""
     # TODO: login without token
-    try:
-        token = request.args["token"]
-        email = request.json["email"].lower()
-        jwt_config: JWTConfig = current_app.config["JWT_CONFIG"]
-        decoded_token = decode_client_jwt_token(token, jwt_config)
-        email_config: EmailConfig = current_app.config["EMAIL_CONFIG"]
-        validate_email(email, email_config.validation_pattern)
-        body = generate_email_verification_token_url(
-            email, decoded_token[jwt_config.redirect_url_field], jwt_config
-        )
-        send_email(email, body, email_config, current_app.logger)
-        return jsonify({"message": email_config.email_send_success}), 200
-    except KeyError:
-        current_app.logger.error("KeyError: Missing 'token' or 'email' in request.")
-        return jsonify({"error": "Missing 'token' or 'email' in request."}), 400
-    except JWTError as jwt_error:
-        current_app.logger.error(f"JWTError: {jwt_error}")
-        return jsonify({"error": "Invalid or expired token."}), 401
-    except InvalidEmailError as email_error:
-        current_app.logger.error(f"EmailError: {email_error}")
-        return jsonify({"error": "Invalid email"}), 400
+    token = request.args["token"]
+    email = request.json["email"].lower()
+    jwt_config: JWTConfig = current_app.config["JWT_CONFIG"]
+    decoded_token = decode_client_jwt_token(token, jwt_config)
+    email_config: EmailConfig = current_app.config["EMAIL_CONFIG"]
+    validate_email(email, email_config.validation_pattern)
+    body = generate_email_verification_token_url(
+        email, decoded_token[jwt_config.redirect_url_field], jwt_config
+    )
+    send_email(email, body, email_config, current_app.logger)
+    return jsonify({"message": email_config.email_send_success}), 200
+
+
+@blueprint.route("/logout")
+def logout():
+    logout_user()
+    return jsonify({"message": LOGOUT_SUCCESS_MESSAGE}), 200
 
 
 @blueprint.route("/authenticate", methods=["GET"])
+@error_handler
 def authenticate():
     """"""
-    try:
-        client_token = request.args["token"]
-        jwt_config: JWTConfig = current_app.config["JWT_CONFIG"]
-        decoded_token = decode_client_jwt_token(client_token, jwt_config)
-        if current_user.is_authenticated:
-            redirect_url = decoded_token[jwt_config.redirect_url_field]
-            client_redirect_url = generate_client_redirect_url(
-                current_user.id, redirect_url, jwt_config
-            )
-            return redirect(client_redirect_url)
-        return login_redirect_with_client_jwt(
-            current_app.config["MEMBRANE_FRONTEND"], client_token, jwt_config
+    client_token = request.args["token"]
+    jwt_config: JWTConfig = current_app.config["JWT_CONFIG"]
+    decoded_token = decode_client_jwt_token(client_token, jwt_config)
+    if current_user.is_authenticated:
+        redirect_url = decoded_token[jwt_config.redirect_url_field]
+        client_redirect_url = generate_client_redirect_url(
+            current_user.id, redirect_url, jwt_config
         )
-    except KeyError:
-        return jsonify({"error": "Missing token"}), 400
-    except JWTError as jwt_error:
-        current_app.logger.error(f"JWT error: {jwt_error}")
-        return jsonify({"error": "Invalid token"}), 401
+        return redirect(client_redirect_url)
+    return login_redirect_with_client_jwt(
+        current_app.config["MEMBRANE_FRONTEND"], client_token, jwt_config
+    )
 
 
 @blueprint.route("/verify_email", methods=["GET"])
+@error_handler
 def verify_email():
     """"""
     token = request.args["token"]
     jwt_config: JWTConfig = current_app.config["JWT_CONFIG"]
     return redirect_to_client_app_using_verification_token(token, jwt_config)
-    # TODO: handle exceptions
