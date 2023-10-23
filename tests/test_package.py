@@ -74,7 +74,6 @@ class TestMembranePackage(unittest.TestCase):
     """Test Membrane package functionalities."""
 
     def setUp(self):
-        """Set up Flask test client and other configurations."""
         self.config = ClientAppConfig()
         self.app = create_test_app(self.config)
         self.client = self.app.test_client(True)
