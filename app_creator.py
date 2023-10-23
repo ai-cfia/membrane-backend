@@ -11,10 +11,10 @@ from membrane.client.flask import User
 
 
 def create_app(config: AppConfig):
+    """"""
     app = Flask(__name__)
     app.config.from_object(config)
 
-    # Register the main blueprint
     from routes import blueprint as main_blueprint
 
     app.register_blueprint(main_blueprint)
@@ -25,12 +25,11 @@ def create_app(config: AppConfig):
         supports_credentials=True,
     )
 
-    logging.basicConfig(
-        format=config.LOGGING_FORMAT,
-        level=getattr(logging, config.LOGGING_LEVEL),
-    )
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter(config.LOGGING_FORMAT))
+    handler.setLevel(getattr(logging, config.LOGGING_LEVEL))
+    app.logger.addHandler(handler)
 
-    # Flask-Login setup
     login_manager = LoginManager()
     login_manager.init_app(app)
     login_manager.login_view = "login_page"
