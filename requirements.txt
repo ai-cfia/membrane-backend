@@ -2,8 +2,6 @@ azure-communication-email==1.0.0
 cryptography==41.0.4
 gunicorn==21.2.0
 PyJWT==2.8.0
-pytest==7.4.2
-pytest-asyncio==0.21.1
 python-dotenv==1.0.0
 PyYAML==6.0.1
 Flask==2.3.1
