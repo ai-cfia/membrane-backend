@@ -1,6 +1,6 @@
-## Setting Up a Quart Application
+## Setting Up a Flask Application
 
-Follow the instructions below to set up a Quart application in your environment:
+Follow the instructions below to set up a Flask application in your environment:
 
 ### 1. Check Pip Version:
 
@@ -46,11 +46,11 @@ pip install -r requirements.txt
 
 ---
 
-Now, you can proceed with running your Quart application or any other tasks. Always ensure that your virtual environment is activated when working on the project to maintain dependencies separately from your global Python environment.
+Now, you can proceed with running your Flask application or any other tasks. Always ensure that your virtual environment is activated when working on the project to maintain dependencies separately from your global Python environment.
 
 ## 6. Environment Variable Configuration:
 
-To run the Quart application correctly, it requires some environment variables to be set. Follow the steps below to set them up:
+To run the Flask application correctly, it requires some environment variables to be set. Follow the steps below to set them up:
 
 1. Navigate to the root directory of the project and create a new file named `.env`.
 2. Open this `.env` file using your preferred text editor.
@@ -64,7 +64,7 @@ Now, define each of the following variables:
 - **Description:** List of origins allowed for cross-origin requests (CORS).
 - **Format:** Comma-separated list of origins.
 - **Example:** `MEMBRANE_CORS_ALLOWED_ORIGINS=http://localhost:3000`
-- **Reference:** https://pypi.org/project/quart-cors/
+- **Reference:** https://pypi.org/project/flask-cors/
 
 #### MEMBRANE_FRONTEND
 
@@ -98,12 +98,17 @@ Now, define each of the following variables:
 - **Example:** `MEMBRANE_COMM_CONNECTION_STRING=your_azure_communication_service_connection_string`
 - **Reference:** https://learn.microsoft.com/en-us/python/api/azure-communication-email/azure.communication.email.emailclient?view=azure-python#azure-communication-email-emailclient-from-connection-string
 
-
 #### MEMBRANE_SENDER_EMAIL
 
 - **Description:** Email address that will send emails.
 - **Example:** `MEMBRANE_SENDER_EMAIL=DoNotReply@your_domain.com`
 - **Reference:** https://learn.microsoft.com/en-us/python/api/overview/azure/communication-email-readme?view=azure-python#send-an-email-message
+
+#### MEMBRANE_SESSION_TYPE
+
+- **Description:** Specifies the storage for session data. Options: 'filesystem', 'redis', 'memcached', etc.
+- **Example:** `MEMBRANE_SESSION_TYPE=filesystem`
+- **Reference** https://flask-session.readthedocs.io/en/latest/config.html
 
 ### Optional Variables
 
@@ -127,12 +132,6 @@ Now, define each of the following variables:
 
 - **Description:** Indicates if the session cookie should be secure.
 - **Example:** `MEMBRANE_SESSION_COOKIE_SECURE=true`
-- **Reference** https://flask-session.readthedocs.io/en/latest/config.html
-
-#### MEMBRANE_SESSION_TYPE
-
-- **Description:** Specifies the storage for session data. Options: 'filesystem', 'redis', 'memcached', etc.
-- **Example:** `MEMBRANE_SESSION_TYPE=null`
 - **Reference** https://flask-session.readthedocs.io/en/latest/config.html
 
 #### MEMBRANE_TOKEN_BLACKLIST
@@ -235,14 +234,14 @@ Now, define each of the following variables:
 - **Example:** `MEMBRANE_KEEP_ALIVE=5`
 - **Reference:** https://hypercorn.readthedocs.io/en/latest/how_to_guides/configuring.html
 
-Once you have defined all these variables, save and close the `.env` file. The Quart application will now use these environment variable values when it runs.
+Once you have defined all these variables, save and close the `.env` file. The Flask application will now use these environment variable values when it runs.
 
-### 7. Run the Main Quart Application:
+### 7. Run the Main Flask Application:
 
 With your virtual environment activated, start the main `app.py`:
 
 ```bash
-quart run
+flask run
 ```
 
 ### 8. Simulate a Client Application:
@@ -250,7 +249,7 @@ quart run
 Open a separate terminal or command prompt. Make sure the virtual environment is activated and then run the `testapp1.py` to simulate a client application:
 
 ```bash
-quart --app testapp1.py run --port=4000
+flask --app testapp1.py run --port=4000
 ```
 
 ### 9. Interact with Membrane Frontend:
@@ -259,7 +258,7 @@ Ensure that the Membrane Frontend React application is running, ideally on `loca
 
 ---
 
-You can now interact with both the main Quart application and the client simulator to validate the entire authentication flow.
+You can now interact with both the main Flask application and the client simulator to validate the entire authentication flow.
 
 ## Running the app from dockerfile
 

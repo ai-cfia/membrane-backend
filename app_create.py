@@ -5,9 +5,9 @@ from pathlib import Path
 
 from azure.communication.email import EmailClient
 from dotenv import load_dotenv
-from quart import Quart
-from quart_cors import cors
-from quart_session import Session
+from flask import Flask
+from flask_cors import CORS
+from flask_session import Session
 
 import emails
 import jwt_utils
@@ -100,7 +100,7 @@ def create_app():
         ),
     )
 
-    app = Quart(__name__)
+    app = Flask(__name__)
 
     app.config.update(
         {
@@ -152,10 +152,10 @@ def create_app():
         app.config["MEMBRANE_FRONTEND"],
     )
 
-    app = cors(
+    CORS(
         app,
-        allow_origin=app.config["MEMBRANE_CORS_ALLOWED_ORIGINS"],
-        allow_credentials=True,
+        origins=app.config["MEMBRANE_CORS_ALLOWED_ORIGINS"],
+        supports_credentials=True,
     )
     logging.basicConfig(
         format=app.config["MEMBRANE_LOGGING_FORMAT"],
