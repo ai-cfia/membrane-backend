@@ -3,8 +3,6 @@ from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlparse
 
 import jwt
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import asymmetric, serialization
 from flask import Flask
 
 from membrane.client.flask import (
@@ -14,29 +12,10 @@ from membrane.client.flask import (
     membrane_current_user,
     membrane_login_required,
 )
+from tests.test_helpers import generate_key_pair
 
 
-def generate_key_pair():
-    private_key = asymmetric.rsa.generate_private_key(
-        public_exponent=65537, key_size=2048, backend=default_backend()
-    )
-    public_key = private_key.public_key()
-
-    private_pem = private_key.private_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PrivateFormat.TraditionalOpenSSL,
-        encryption_algorithm=serialization.NoEncryption(),
-    )
-
-    public_pem = public_key.public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo,
-    )
-
-    return private_pem.decode("utf-8"), public_pem.decode("utf-8")
-
-
-class Config:
+class ClientAppConfig:
     """Custom flask config with Membrane activated for tests."""
 
     MEMBRANE_SERVER = "http://test_server"
@@ -52,7 +31,8 @@ class Config:
     TESTING = True
 
 
-def create_test_app(config: Config):
+def create_test_app(config: ClientAppConfig):
+    """Create and configure a Flask app for testing with Membrane authentication."""
     app = Flask(__name__)
     app.config.from_object(config)
 
@@ -73,8 +53,8 @@ def create_test_app(config: Config):
         certificate=certificate_data if config.MEMBRANE_SERVER else None,
         token_expiration=config.TOKEN_EXPIRES_IN_SECONDS,
         custom_claims=None,
-        landing_page_path=config.LANDING_PAGE_PATH,
-        logout_page_path=config.LOGOUT_PAGE_PATH,
+        landing_endpoint=config.LANDING_PAGE_PATH,
+        logged_out_endpoint=config.LOGOUT_PAGE_PATH,
     )
 
     @app.route("/")
@@ -95,7 +75,7 @@ class TestMembranePackage(unittest.TestCase):
 
     def setUp(self):
         """Set up Flask test client and other configurations."""
-        self.config = Config()
+        self.config = ClientAppConfig()
         self.app = create_test_app(self.config)
         self.client = self.app.test_client(True)
 
@@ -191,7 +171,7 @@ class TestMembranePackageWithDisabledLogin(unittest.TestCase):
 
     def setUp(self):
         """Set up Flask test client with disabled Membrane login."""
-        self.config = Config()
+        self.config = ClientAppConfig()
         self.config.MEMBRANE_SERVER = None  # Disable login
         self.app = create_test_app(self.config)
         self.client = self.app.test_client(True)
