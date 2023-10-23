@@ -53,8 +53,8 @@ def create_test_app(config: ClientAppConfig):
         certificate=certificate_data if config.MEMBRANE_SERVER else None,
         token_expiration=config.TOKEN_EXPIRES_IN_SECONDS,
         custom_claims=None,
-        landing_endpoint=config.LANDING_PAGE_PATH,
-        logged_out_endpoint=config.LOGOUT_PAGE_PATH,
+        landing_url=config.LANDING_PAGE_PATH,
+        logged_out_url=config.LOGOUT_PAGE_PATH,
     )
 
     @app.route("/")
