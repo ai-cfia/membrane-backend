@@ -1,80 +1,109 @@
 """
 Pytest configuration and shared fixtures for test setup.
 """
+import logging
+import unittest
+from datetime import datetime, timedelta
+from io import StringIO
 from pathlib import Path
-import pytest
-from flask import Flask
-from jwt_utils import generate_email_verification_token
-from generate_jwt import generate_jwt
+from unittest.mock import patch
 
-# Import the Flask application instance from your app module
-from app import app as flask_app
+import jwt
+from quart import Quart
 
-SERVER_PRIVATE_KEY = Path('tests/server_private_key/server_private_key.pem')
+with patch("app_create.create_app") as mock_create_app:
+    mock_create_app.return_value = Quart(__name__)
+    from app import app
 
-@pytest.fixture(scope='session')
-def test_private_key():
-    """Fixture to read and provide the private key."""
-    with open('tests/client_private_keys/testapp1_private_key.pem', 'rb') as f:
-        return f.read()
+from emails import EmailConfig  # noqa: E402
+from jwt_utils import JWTConfig, generate_email_verification_token  # noqa: E402
 
-@pytest.fixture
-def app():
-    """Flask application fixture for the tests."""
-    flask_app.config['SESSION_TYPE'] = 'memory'
-    flask_app.config['TESTING'] = True
-    # Add this configuration for SERVER_NAME
-    flask_app.config['SERVER_NAME'] = 'login.example.com'
 
-    yield flask_app
-    # pylint: disable=redefined-outer-name
+class TestConfig(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.app = app
+        cls.client_private_key = cls.read_client_private_key()
+        cls.jwt_config = cls.setup_jwt_config()
+        cls.email_config = cls.setup_email_config()
 
-@pytest.fixture
-def test_client(app: Flask):
-    """Test client fixture for the tests."""
-    return app.test_client()
+    @classmethod
+    def read_client_private_key(cls):
+        with open("tests/client_private_keys/testapp1_private_key.pem", "rb") as f:
+            return f.read()
 
-@pytest.fixture
-def base_url():
-    """Base URL fixture for the tests."""
-    return '/'
-
-@pytest.fixture
-def login_url(base_url):
-    """Login URL fixture for the tests."""
-    return f'{base_url}authenticate'
-
-@pytest.fixture
-def set_allowed_domains(monkeypatch):  # noqa
-    """Fixture to set the allowed email domains environment variable."""
-    monkeypatch.setenv('ALLOWED_EMAIL_DOMAINS', 'gc.ca,canada.ca,inspection.gc.ca')
-
-@pytest.fixture
-def sample_jwt_token(generate_jwt_token):
-    """Fixture to generate a sample JWT token for testing."""
-    return generate_jwt_token({
-        "data": "test_data",
-        "app_id": "testapp1",
-        "redirect_url": "https://www.example.com"
-    })
-
-@pytest.fixture
-def generate_jwt_token(test_private_key):
-    """Fixture to generate JWT tokens for testing purposes."""
-    def _generator(payload, headers=None):
-        return generate_jwt(payload, test_private_key, headers=headers)
-
-    return _generator
-
-@pytest.fixture
-def sample_verification_token(app):
-    """Fixture to generate a sample email verification token for testing."""
-    with app.app_context():
-        print(SERVER_PRIVATE_KEY)
-        verification_url = generate_email_verification_token(
-            'test@inspection.gc.ca',
-            'https://www.example.com/',
-            int(30),
-            SERVER_PRIVATE_KEY
+    @classmethod
+    def setup_jwt_config(cls):
+        return JWTConfig(
+            client_public_keys_folder=Path("tests/client_public_keys"),
+            server_public_key=Path("tests/server_public_key/server_public_key.pem"),
+            server_private_key=Path("tests/server_private_key/server_private_key.pem"),
+            app_id_field="app_id",
+            redirect_url_field="redirect_url",
+            algorithm="RS256",
+            data_field="data",
+            jwt_access_token_expire_seconds=300,
+            jwt_expire_seconds=300,
+            token_blacklist=set(),
         )
-    return verification_url
+
+    @classmethod
+    def setup_email_config(cls):
+        return EmailConfig(
+            email_client=None,
+            sender_email="",
+            subject="Please Verify You Email Address",
+            validation_pattern="^[a-zA-Z0-9._+]+@(?:gc\.ca|canada\.ca|inspection\.gc\.ca)$",
+            email_send_success="Valid email address, Email sent with JWT link",
+            html_content="<html><h1>{}</h1></html>",
+            poller_wait_seconds=2,
+            timeout=20,
+        )
+
+    def setUp(self):
+        self.setup_app()
+        self.test_client = self.app.test_client()
+        self.setup_payload()
+
+        # Suppress print statements
+        self.held_output = StringIO()
+        self.patcher = patch("sys.stdout", self.held_output)
+        self.patcher.start()
+        logging.disable(logging.CRITICAL)
+
+    def tearDown(self):
+        pass
+
+    def setup_app(self):
+        self.app.config["JWT_CONFIG"] = self.jwt_config
+        self.app.config["EMAIL_CONFIG"] = self.email_config
+        self.app.config["TESTING"] = True
+        self.app.config["SERVER_NAME"] = "login.example.com"
+        self.app.config["MEMBRANE_FRONTEND"] = "membrane-frontend.ca"
+
+    def setup_payload(self):
+        self.payload = {
+            self.jwt_config.data_field: "test_data",
+            self.jwt_config.app_id_field: "testapp1",
+            self.jwt_config.redirect_url_field: "www.example.com",
+        }
+
+    def generate_jwt_token(self, payload, jwt_config: JWTConfig, app_id):
+        if "exp" not in payload:
+            expiration_seconds = datetime.utcnow() + timedelta(seconds=5 * 60)
+            payload["exp"] = int(expiration_seconds.timestamp())
+        headers = {
+            "alg": jwt_config.algorithm,
+            "typ": jwt_config.token_type,
+            jwt_config.app_id_field: app_id,
+        }
+        return jwt.encode(
+            payload, self.client_private_key, jwt_config.algorithm, headers
+        )
+
+    async def sample_verification_token(self):
+        async with self.app.app_context():
+            verification_url = generate_email_verification_token(
+                "test@inspection.gc.ca", "https://www.example.com/", self.jwt_config
+            )
+        return verification_url

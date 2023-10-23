@@ -1,0 +1,35 @@
+# Ignore documentation and READMEs
+LICENSE
+README.md
+WORKFLOW.md
+
+# Ignore Python compiled files
+__pycache__
+**/__pycache__
+**/*.pyc
+**/*.pyo
+
+# Ignore Flask session files
+flask_session/*
+
+# Ignore test-related files
+tests/
+
+# Ignore test and dev specific file
+testapp1.py
+requirements.txt
+generate_jwt.py
+
+# Ignore environment files
+*.env
+.env*
+
+# Ignore bash scripts
+*.sh
+
+# Ignore secrets
+keys/
+*.pem
+
+# Ignore log files
+*.log
