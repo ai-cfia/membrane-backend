@@ -20,6 +20,8 @@ INVALID_EMAIL_ERROR = "Invalid email"
 LOGOUT_SUCCESS_MESSAGE = "Logged out successfully"
 MISSING_TOKEN_ERROR = "Missing token"
 INVALID_TOKEN_ERROR = "Invalid token"
+INVALID_TOKEN_ERROR_FOR_USER = "Invalid Token for User"
+NOT_LOGGED_IN = "No user is logged in"
 
 blueprint = Blueprint("main", __name__)
 
@@ -50,11 +52,13 @@ def error_handler(f):
 
 @blueprint.route("/health", methods=["GET"])
 def health():
+    """"""
     return current_app.config["HEALTH_MESSAGE"], 200
 
 
 @blueprint.route("/login_page")
 def login_page():
+    """"""
     return redirect(current_app.config["MEMBRANE_FRONTEND"])
 
 
@@ -77,7 +81,17 @@ def login():
 
 
 @blueprint.route("/logout")
+@error_handler
 def logout():
+    """"""
+    if not current_user.is_authenticated:
+        return jsonify({"message": NOT_LOGGED_IN}), 401
+    user_id = current_user.id
+    token = request.args["token"]
+    jwt_config: JWTConfig = current_app.config["JWT_CONFIG"]
+    decoded_token = decode_client_jwt_token(token, jwt_config)
+    if decoded_token.get("sub", "") != user_id:
+        return jsonify({"message": INVALID_TOKEN_ERROR_FOR_USER}), 401
     logout_user()
     return jsonify({"message": LOGOUT_SUCCESS_MESSAGE}), 200
 

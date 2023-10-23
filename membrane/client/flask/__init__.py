@@ -6,15 +6,14 @@ from urllib.parse import urljoin
 
 import jwt
 from flask import Blueprint, Flask, redirect, request, url_for
-from flask_login import LoginManager, UserMixin
+from flask_login import LoginManager, UserMixin, login_user, logout_user
 from flask_login import current_user as membrane_current_user
 from flask_login import login_required as _login_required
-from flask_login import login_user, logout_user
 
 ALGORITHM = "RS256"
 DEFAULT_TOKEN_EXPIRATION = 300
-DEFAULT_LANDING_PAGE_PATH = "/"
-DEFAULT_LOGOUT_PAGE_PATH = "/"
+DEFAULT_LANDING_ENDPOINT = "/"
+DEFAULT_LOGGED_OUT_ENDPOINT = "/"
 RESERVED_CLAIMS = set(["alg", "app_id", "exp", "redirect_url", "typ"])
 DEFAULT_REQUIRE_LOGIN = True
 
@@ -43,8 +42,8 @@ class Configuration:
     certificate: Certificate = None
     token_expiration = DEFAULT_TOKEN_EXPIRATION
     custom_claims = {}
-    landing_page_path = DEFAULT_LANDING_PAGE_PATH
-    logout_page_path = DEFAULT_LOGOUT_PAGE_PATH
+    landing_endpoint = DEFAULT_LANDING_ENDPOINT
+    logged_out_endpoint = DEFAULT_LOGGED_OUT_ENDPOINT
     require_login = DEFAULT_REQUIRE_LOGIN
 
 
@@ -83,8 +82,8 @@ def configure_membrane(
     certificate: str | dict | None,
     token_expiration: int | None = None,
     custom_claims: dict | None = None,
-    landing_page_path: str | None = None,
-    logout_page_path: str | None = None,
+    landing_endpoint: str | None = None,
+    logged_out_endpoint: str | None = None,
 ):
     """
     Configures membrane for a Flask app with various options.
@@ -110,8 +109,8 @@ def configure_membrane(
         _config.token_expiration = token_expiration or DEFAULT_TOKEN_EXPIRATION
         _config.custom_claims = custom_claims or {}
         _check_custom_claims(_config.custom_claims)
-        _config.landing_page_path = landing_page_path or DEFAULT_LANDING_PAGE_PATH
-        _config.logout_page_path = logout_page_path or DEFAULT_LOGOUT_PAGE_PATH
+        _config.landing_endpoint = landing_endpoint or DEFAULT_LANDING_ENDPOINT
+        _config.logged_out_endpoint = logged_out_endpoint or DEFAULT_LOGGED_OUT_ENDPOINT
     return app
 
 
@@ -128,14 +127,14 @@ def _get_exp_date(token_expiration: int | None) -> int:
     return int((datetime.utcnow() + timedelta(seconds=exp)).timestamp())
 
 
-def _landing_page_url() -> str:
-    """Get the landing page URL."""
-    return urljoin(request.url_root, _config.landing_page_path)
+def _landing_endpoint() -> str:
+    """Get the landing endpoint."""
+    return urljoin(request.url_root, _config.landing_endpoint)
 
 
-def _logout_page_url() -> str:
-    """Get the logout page URL."""
-    return urljoin(request.url_root, _config.logout_page_path)
+def _logged_out_endpoint() -> str:
+    """Get the logged out endpoint."""
+    return urljoin(request.url_root, _config.logged_out_endpoint)
 
 
 def _create_custom_token(
@@ -147,7 +146,7 @@ def _create_custom_token(
     _check_custom_claims(custom_claims or {})
     payload = {
         "app_id": _config.certificate.app_id,
-        "redirect_url": redirect_url or _landing_page_url(),
+        "redirect_url": redirect_url or _landing_endpoint(),
         "exp": _get_exp_date(token_expiration),
     }
     payload.update(custom_claims or _config.custom_claims)
@@ -219,17 +218,26 @@ def _redirect_for_authentication():
     return redirect(f"{_config.certificate.auth_url}/authenticate?token={jwt_token}")
 
 
+def _redirect_for_logout(user_id):
+    """"""
+    claims = {"sub": user_id}
+    jwt_token = _create_custom_token(request.url, custom_claims=claims)
+    return redirect(f"{_config.certificate.auth_url}/logout?token={jwt_token}")
+
+
 @blueprint.route("/login")
 def login():
     """Login route."""
-    if hasattr(membrane_current_user, "id"):
-        return redirect(_landing_page_url())
+    if membrane_current_user.is_authenticated:
+        return redirect(_landing_endpoint())
     return _redirect_for_authentication()
 
 
 @blueprint.route("/logout")
-@membrane_login_required
 def logout():
     """Logout route."""
+    if not membrane_current_user.is_authenticated:
+        return redirect(_logged_out_endpoint())
+    user_id = membrane_current_user.id
     logout_user()
-    return redirect(_logout_page_url())
+    return _redirect_for_logout(user_id)
