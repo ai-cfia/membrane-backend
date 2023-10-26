@@ -1,6 +1,10 @@
 ## Setting Up a Quart Application
+>**Note:** If you're using a `devcontainer`, the steps involving virtual environments are not necessary. However, for developers not using `devcontainer`, the virtual environment setup remains relevant.
+
 
 Follow the instructions below to set up a Quart application in your environment:
+
+### Using virtual environment
 
 ### 1. Check Pip Version:
 
@@ -48,7 +52,7 @@ pip install -r requirements.txt
 
 Now, you can proceed with running your Quart application or any other tasks. Always ensure that your virtual environment is activated when working on the project to maintain dependencies separately from your global Python environment.
 
-## 6. Environment Variable Configuration:
+##  Environment Variable Configuration:
 
 To run the Quart application correctly, it requires some environment variables to be set. Follow the steps below to set them up:
 
@@ -237,7 +241,9 @@ Now, define each of the following variables:
 
 Once you have defined all these variables, save and close the `.env` file. The Quart application will now use these environment variable values when it runs.
 
-### 7. Run the Main Quart Application:
+### Running the App Locally
+
+### 1. Run the Main Quart Application:
 
 With your virtual environment activated, start the main `app.py`:
 
@@ -245,7 +251,7 @@ With your virtual environment activated, start the main `app.py`:
 quart run
 ```
 
-### 8. Simulate a Client Application:
+### 2. Simulate a Client Application:
 
 Open a separate terminal or command prompt. Make sure the virtual environment is activated and then run the `testapp1.py` to simulate a client application:
 
@@ -253,7 +259,7 @@ Open a separate terminal or command prompt. Make sure the virtual environment is
 quart --app testapp1.py run --port=4000
 ```
 
-### 9. Interact with Membrane Frontend:
+### 3. Interact with Membrane Frontend:
 
 Ensure that the Membrane Frontend React application is running, ideally on `localhost`. This application will serve as the frontend interface for users to provide their email addresses to Membrane Backend.
 
@@ -261,7 +267,7 @@ Ensure that the Membrane Frontend React application is running, ideally on `loca
 
 You can now interact with both the main Quart application and the client simulator to validate the entire authentication flow.
 
-## Running the app from dockerfile
+### Setting Up the App
 
 ### 1. Generate Server, Client Keys, and Environment Files
 
