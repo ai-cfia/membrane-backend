@@ -26,7 +26,7 @@ DEFAULT_HTML_CONTENT = "<html><h1>{}</h1></html>"
 DEFAULT_POLLER_WAIT_SECONDS = 10
 DEFAULT_TIMEOUT_SECONDS = 180
 DEFAULT_VALIDATION_PATTERN = (
-    "^[a-zA-Z0-9._+]+@(?:gc\.ca|canada\.ca|inspection\.gc\.ca)$"
+    "^[a-zA-Z0-9._+-]+@(?:gc\.ca|canada\.ca|inspection\.gc\.ca)$"
 )
 DEFAULT_SUCCESS_MESSAGE = "Valid email address, Email sent with JWT link"
 DEFAULT_EMAIL_SUBJECT = "Please Verify You Email Address"

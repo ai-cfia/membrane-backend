@@ -15,7 +15,7 @@ from emails import (
 class TestEmailConfig(EmailConfig):
     email_client = None
     sender_email = "sender"
-    validation_pattern = "^[a-zA-Z0-9._+]+@(?:gc\.ca|canada\.ca|inspection\.gc\.ca)$"
+    validation_pattern = "^[a-zA-Z0-9._+-]+@(?:gc\.ca|canada\.ca|inspection\.gc\.ca)$"
 
 
 class TestEmails(unittest.TestCase):
@@ -112,7 +112,7 @@ class TestEmails(unittest.TestCase):
         )
 
     def test_email_with_unsupported_symbols(self):
-        invalid_chars = "!#%^&*()=[]{}|;<>?,:\"'\\"
+        invalid_chars = "!#%^&*()=[]{}|;<>?,:\"'\\а"
         base_email = "test.user{}@inspection.gc.ca"
 
         for char in invalid_chars:
@@ -120,11 +120,6 @@ class TestEmails(unittest.TestCase):
             self.assert_invalid_email(
                 invalid_email, self.email_config.validation_pattern
             )
-
-    def test_email_with_lookalike_utf8_characters(self):
-        self.assert_invalid_email(
-            "test.userа@inspection.gc.ca", self.email_config.validation_pattern
-        )
 
     def test_misspelled_inspection_subdomain(self):
         self.assert_invalid_email(
