@@ -213,16 +213,18 @@ def _unauthorized():
     return _redirect_for_authentication()
 
 
-def _redirect_for_authentication():
+def _redirect_for_authentication(redirect_url_after_auth=None):
     """Redirect for authentication."""
-    jwt_token = _create_custom_token(request.url)
+    jwt_token = _create_custom_token(redirect_url_after_auth or request.url)
     return redirect(f"{_config.certificate.auth_url}/authenticate?token={jwt_token}")
 
 
-def _redirect_for_logout(user_id):
+def _redirect_for_logout(user_id, redirect_url_after_auth=None):
     """"""
     claims = {"sub": user_id}
-    jwt_token = _create_custom_token(request.url, custom_claims=claims)
+    jwt_token = _create_custom_token(
+        redirect_url_after_auth or request.url, custom_claims=claims
+    )
     return redirect(f"{_config.certificate.auth_url}/logout?token={jwt_token}")
 
 
@@ -231,7 +233,7 @@ def login():
     """Login route."""
     if membrane_current_user.is_authenticated:
         return redirect(_landing_url())
-    return _redirect_for_authentication()
+    return _redirect_for_authentication(_landing_url())
 
 
 @blueprint.route("/logout")
@@ -241,4 +243,4 @@ def logout():
         return redirect(_logged_out_url())
     user_id = membrane_current_user.id
     logout_user()
-    return _redirect_for_logout(user_id)
+    return _redirect_for_logout(user_id, _logged_out_url())
