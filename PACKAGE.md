@@ -14,28 +14,40 @@ pip install --no-cache-dir git+https://github.com/ai-cfia/membrane-backend.git
 
 ## Features
 
-- Simple Flask blueprint integration
+- Simple Flask blueprint integration for login and logout routes
 - JWT Token-based authentication
-- Flexible and customizable
-- Error handling for JWT decoding
 
 ## Usage
 
 ### Basic Setup
 
-Import the `configure` function and call it to set up the package.
+Import the `configure_membrane` function and call it to set up the package.
 
 ```python
-from membrane import configure
+from membrane.client.flask import configure_membrane
 
 # Configuration
-configure(
-    active=True
+configure_membrane(
     app=flask_app_instance,
-    certificate=path_to_certificate,
+    certificate=certificate_dict,
     token_expiration=3600,
-    redirect_path='/',
+    custom_claims=None,
+    landing_page_path='/',
+    logout_page_path='/'
 )
+```
+
+### Login Required Decorator
+
+Use the `membrane_login_required` decorator to protect your routes.
+
+```python
+from membrane.client.flask import membrane_login_required
+
+@app.route('/protected')
+@membrane_login_required
+def protected_route():
+    return 'This is a protected route.'
 ```
 
 ### Adding Login and Logout Routes
@@ -48,17 +60,4 @@ from membrane.client.flask import blueprint as membrane_blueprint
 
 app = Flask(__name__)
 app.register_blueprint(membrane_blueprint)
-```
-
-### Login Required Decorator
-
-You can use `membrane_login_required` decorator to protect your routes.
-
-```python
-from membrane.client.flask import membrane_login_required
-
-@app.route('/protected')
-@membrane_login_required
-def protected_route():
-    return 'This is a protected route.'
 ```
