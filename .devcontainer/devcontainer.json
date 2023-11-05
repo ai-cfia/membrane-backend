@@ -1,6 +1,15 @@
 {
-    "name": "Python 3",
-    // More info on this configuration: https://containers.dev/implementors/json_reference/#image-specific
-    "image": "mcr.microsoft.com/devcontainers/python:3.11",
-    "postCreateCommand": "pip3 install --user -r requirements.txt"
+  "name": "Python 3",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "postCreateCommand": "pip3 install --user -r requirements.txt",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "charliermarsh.ruff",
+        "GitHub.vscode-pull-request-github",
+        "ms-python.python",
+        "ms-python.black-formatter"
+      ]
+    }
   }
+}
