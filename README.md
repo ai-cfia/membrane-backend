@@ -1,15 +1,18 @@
-
+<<<<<<< HEAD
 ## Work Flow
 
 Louis Login Backend offers a comprehensive workflow that ensures a seamless Single Sign-On (SSO) experience. The system operates through a series of steps starting from the client application check to email verification and eventual redirection after verification. 
 
 For a detailed step-by-step breakdown and to understand how the API endpoints function within this process, please refer to the [WORKFLOW documentation](./WORKFLOW.md).
 
-## Setting Up a Quart Application
->**Note:** If you're using a `devcontainer`, the steps involving virtual environments are not necessary. However, for developers not using `devcontainer`, the virtual environment setup remains relevant.
+## Setting Up a Flask Application
+=======
+Membrane-Backend is a Single Sign-On (SSO) solution specifically designed for AI-Lab products. This repository contains two key components:
+>>>>>>> c2d29b5 (issue #35: update README)
 
-Follow the instructions below to set up a Quart application in your environment:
+1. **SSO Server**: A centralized authentication and authorization service built with Flask, designed to provide a single point of entry for multiple services within the AI-Lab ecosystem.
 
+<<<<<<< HEAD
 ### Using virtual environment
 
 ### 1. Check Pip Version:
@@ -53,14 +56,18 @@ Ensure you have a `requirements.txt` file in your project directory. Install all
 ```bash
 pip install -r requirements.txt
 ```
+=======
+2. **Client Packages**: These are the required packages that need to be installed on client backends to enable Membrane functionality. These packages facilitate secure and seamless interaction with the SSO server.
+>>>>>>> c2d29b5 (issue #35: update README)
 
 ---
 
-Now, you can proceed with running your Quart application or any other tasks. Always ensure that your virtual environment is activated when working on the project to maintain dependencies separately from your global Python environment.
+## Server
 
+<<<<<<< HEAD
 ##  Environment Variable Configuration:
 
-To run the Quart application correctly, it requires some environment variables to be set. Follow the steps below to set them up:
+To run the Flask application correctly, it requires some environment variables to be set. Follow the steps below to set them up:
 
 1. Navigate to the root directory of the project and create a new file named `.env`.
 2. Open this `.env` file using your preferred text editor.
@@ -74,7 +81,7 @@ Now, define each of the following variables:
 - **Description:** List of origins allowed for cross-origin requests (CORS).
 - **Format:** Comma-separated list of origins.
 - **Example:** `MEMBRANE_CORS_ALLOWED_ORIGINS=http://localhost:3000`
-- **Reference:** https://pypi.org/project/quart-cors/
+- **Reference:** https://pypi.org/project/flask-cors/
 
 #### MEMBRANE_FRONTEND
 
@@ -108,12 +115,17 @@ Now, define each of the following variables:
 - **Example:** `MEMBRANE_COMM_CONNECTION_STRING=your_azure_communication_service_connection_string`
 - **Reference:** https://learn.microsoft.com/en-us/python/api/azure-communication-email/azure.communication.email.emailclient?view=azure-python#azure-communication-email-emailclient-from-connection-string
 
-
 #### MEMBRANE_SENDER_EMAIL
 
 - **Description:** Email address that will send emails.
 - **Example:** `MEMBRANE_SENDER_EMAIL=DoNotReply@your_domain.com`
 - **Reference:** https://learn.microsoft.com/en-us/python/api/overview/azure/communication-email-readme?view=azure-python#send-an-email-message
+
+#### MEMBRANE_SESSION_TYPE
+
+- **Description:** Specifies the storage for session data. Options: 'filesystem', 'redis', 'memcached', etc.
+- **Example:** `MEMBRANE_SESSION_TYPE=filesystem`
+- **Reference** https://flask-session.readthedocs.io/en/latest/config.html
 
 ### Optional Variables
 
@@ -137,12 +149,6 @@ Now, define each of the following variables:
 
 - **Description:** Indicates if the session cookie should be secure.
 - **Example:** `MEMBRANE_SESSION_COOKIE_SECURE=true`
-- **Reference** https://flask-session.readthedocs.io/en/latest/config.html
-
-#### MEMBRANE_SESSION_TYPE
-
-- **Description:** Specifies the storage for session data. Options: 'filesystem', 'redis', 'memcached', etc.
-- **Example:** `MEMBRANE_SESSION_TYPE=null`
 - **Reference** https://flask-session.readthedocs.io/en/latest/config.html
 
 #### MEMBRANE_TOKEN_BLACKLIST
@@ -245,34 +251,69 @@ Now, define each of the following variables:
 - **Example:** `MEMBRANE_KEEP_ALIVE=5`
 - **Reference:** https://hypercorn.readthedocs.io/en/latest/how_to_guides/configuring.html
 
-Once you have defined all these variables, save and close the `.env` file. The Quart application will now use these environment variable values when it runs.
+Once you have defined all these variables, save and close the `.env` file. The Flask application will now use these environment variable values when it runs.
 
+<<<<<<< HEAD
 ### Running the App Locally
 
 ### 1. Run the Main Quart Application:
+=======
+### 7. Run the Main Flask Application:
+>>>>>>> 405160b (issue #35: revert from quart to flask)
 
 With your virtual environment activated, start the main `app.py`:
+=======
+### Getting Started
+
+#### Cloning the repository
+>>>>>>> c2d29b5 (issue #35: update README)
 
 ```bash
-quart run
+git clone https://github.com/ai-cfia/membrane-backend.git
 ```
 
+<<<<<<< HEAD
 ### 2. Simulate a Client Application:
+=======
+#### Configuration
+>>>>>>> c2d29b5 (issue #35: update README)
 
-Open a separate terminal or command prompt. Make sure the virtual environment is activated and then run the `testapp1.py` to simulate a client application:
+1. Navigate: `cd membrane-backend`
+2. Run `./init-server.sh` to create necessary server resources.
+3. Run `./add-client-app.sh <your-client-app-name>` to create a client key pair.
+4. Edit the `.env` file.
 
-```bash
-quart --app testapp1.py run --port=4000
-```
+#### Running the server
 
+<<<<<<< HEAD
 ### 3. Interact with Membrane Frontend:
+=======
+1. **Using VS Code DevContainer**
+>>>>>>> c2d29b5 (issue #35: update README)
 
-Ensure that the Membrane Frontend React application is running, ideally on `localhost`. This application will serve as the frontend interface for users to provide their email addresses to Membrane Backend.
+   - **Prerequisites**: VS Code, Docker
+   - **Open in VS Code**: `code .`
+   - **Start DevContainer**: Click "Reopen in Container" in VS Code.
+   - **Run**: `flask run --port=<your_port>`
+
+2. **Using Dockerfile**
+
+   - **Prerequisites**: Docker
+   - **Build**: `docker build -t membrane-backend .`
+   - **Run**: `export PORT=<your_port> && docker run -v $(pwd)/keys:/app/keys -p $PORT:$PORT -e PORT=$PORT --env-file .env <your_app_name>`
+
+3. **Running without Containers**
+
+   - **Prerequisites**: Python 3.11, pip
+   - **Setup Virtual Environment**: `python -m venv venv && source venv/bin/activate`
+   - **Install Dependencies**: `pip install -r requirements.txt`
+   - **Run**: `export PORT=<your_port> && gunicorn -b :$PORT app:app`
 
 ---
 
-You can now interact with both the main Quart application and the client simulator to validate the entire authentication flow.
+## Client Packages
 
+<<<<<<< HEAD
 ### Setting Up the App
 
 ### 1. Generate Server, Client Keys, and Environment Files
@@ -369,3 +410,6 @@ You can now interact with both the main Quart application and the client simulat
    ```bash
    docker run -v $(pwd)/keys:/app/keys -p $PORT:$PORT -e PORT=$PORT --env-file .env your_app_name
    ```
+=======
+See [Package](./PACKAGE.md)
+>>>>>>> c2d29b5 (issue #35: update README)

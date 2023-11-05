@@ -17,6 +17,6 @@ ENV PORT=5000
 ENV MEMBRANE_WORKERS=1 
 ENV MEMBRANE_KEEP_ALIVE=5
 
-# Run the Quart app when the container starts
+# Run the Flask app when the container starts
 # Adapt the workers and keep-alive parameters to the deployment requirements
-ENTRYPOINT hypercorn --bind :$PORT --workers $MEMBRANE_WORKERS --keep-alive $MEMBRANE_KEEP_ALIVE app:app
+ENTRYPOINT gunicorn -b :$PORT -w $MEMBRANE_WORKERS --keep-alive $MEMBRANE_KEEP_ALIVE app:app

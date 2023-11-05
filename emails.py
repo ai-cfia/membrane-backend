@@ -1,16 +1,7 @@
-from dataclasses import dataclass
+import re
 from logging import Logger
 
-from azure.communication.email import EmailClient
-
-DEFAULT_HTML_CONTENT = "<html><h1>{}</h1></html>"
-DEFAULT_POLLER_WAIT_SECONDS = 10
-DEFAULT_TIMEOUT_SECONDS = 180
-DEFAULT_VALIDATION_PATTERN = (
-    "^[a-zA-Z0-9._+]+@(?:gc\.ca|canada\.ca|inspection\.gc\.ca)$"
-)
-DEFAULT_SUCCESS_MESSAGE = "Valid email address, Email sent with JWT link"
-DEFAULT_EMAIL_SUBJECT = "Please Verify You Email Address"
+from config import EmailConfig
 
 
 class EmailsException(Exception):
@@ -25,20 +16,12 @@ class PollingTimeoutError(EmailsException):
     """Custom Exception for polling time-out during email sending."""
 
 
+class InvalidEmailError(EmailsException):
+    """Custom Exception for invalid email."""
+
+
 class UnexpectedEmailSendError(EmailsException):
     """Custom Exception for unexpected errors."""
-
-
-@dataclass
-class EmailConfig:
-    email_client: EmailClient
-    sender_email: str
-    subject: str = DEFAULT_EMAIL_SUBJECT
-    validation_pattern: str = DEFAULT_VALIDATION_PATTERN
-    email_send_success: str = DEFAULT_SUCCESS_MESSAGE
-    html_content: str = DEFAULT_HTML_CONTENT
-    poller_wait_seconds: int = DEFAULT_POLLER_WAIT_SECONDS
-    timeout: int = DEFAULT_TIMEOUT_SECONDS
 
 
 def send_email(recipient_email, body: str, config: EmailConfig, logger: Logger) -> dict:
@@ -76,3 +59,11 @@ def send_email(recipient_email, body: str, config: EmailConfig, logger: Logger) 
     except Exception as e:
         logger.exception(e)
         raise UnexpectedEmailSendError(f"An unexpected error occurred: {e}") from e
+
+
+def validate_email(email, pattern):
+    """Check if the provided email is valid."""
+
+    if not re.match(pattern, email):
+        raise InvalidEmailError(f"Invalid email address: {email}")
+    return True

@@ -3,24 +3,16 @@ Utilities for encoding, decoding, and validating JWT tokens.
 """
 import logging
 from copy import copy
-from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from pathlib import Path
 
+from flask import redirect, url_for
+from flask_login import login_user
 from jwt import decode, encode
 from jwt import exceptions as jwt_exceptions
-from quart import redirect, url_for
+from jwt import get_unverified_header
 
-DEFAULT_CLIENT_PUBLIC_KEYS_DIRECTORY = "./keys/client"
-DEFAULT_SERVER_PUBLIC_KEY = "./keys/server_public.pem"
-DEFAULT_SERVER_PRIVATE_KEY = "./keys/server_private.pem"
-DEFAULT_APP_ID_FIELD = "app_id"
-DEFAULT_REDIRECT_URL_FIELD = "redirect_url"
-DEFAULT_ENCODE_ALGORITHM = "RS256"
-DEFAULT_DATA_FIELD = "data"
-DEFAULT_JWT_ACCESS_TOKEN_EXPIRE_SECONDS = 300
-DEFAULT_JWT_EXPIRE_SECONDS = 300
-DEFAULT_TOKEN_BLACKLIST = ""
+from config import JWTConfig
+from membrane.client.flask import User
 
 
 class JWTError(Exception):
@@ -59,46 +51,24 @@ class JWTExpired(JWTError):
     """Raised when the provided token is expired."""
 
 
-@dataclass
-class JWTConfig:
-    client_public_keys_folder: Path
-    server_public_key: Path
-    server_private_key: Path
-    app_id_field: str = DEFAULT_APP_ID_FIELD
-    redirect_url_field: str = DEFAULT_REDIRECT_URL_FIELD
-    algorithm: str = DEFAULT_ENCODE_ALGORITHM
-    data_field: str = DEFAULT_DATA_FIELD
-    jwt_access_token_expire_seconds: int = DEFAULT_JWT_ACCESS_TOKEN_EXPIRE_SECONDS
-    jwt_expire_seconds: int = DEFAULT_JWT_EXPIRE_SECONDS
-    token_blacklist: set = field(default_factory=set)
-    token_type: str = "JWT"
-
-
 def decode_client_jwt_token(jwt_token, config: JWTConfig):
     if not jwt_token:
         raise JWTError("No JWT token provided in query parameters.")
     try:
         # Temporarily decode the token to fetch the app_id
-        unverified_decoded_token = decode(
-            jwt_token, options={"verify_signature": False}
-        )
-        if config.app_id_field not in unverified_decoded_token:
-            raise JWTAppIdMissingError("No app id in JWT payload.")
+        # TODO: anti pattern ask for forgiveness?
+        header = get_unverified_header(jwt_token)
+        if config.app_id_field not in header:
+            raise JWTAppIdMissingError("No app id in JWT header.")
 
-        app_id = unverified_decoded_token[config.app_id_field]
-
-        # Look for a corresponding public key file
-        public_key_path = config.client_public_keys_folder / f"{app_id}_public_key.pem"
-
-        if not public_key_path.exists():
+        app_id = header[config.app_id_field]
+        public_key_name = f"{app_id}{config.public_key_suffix}"
+        if public_key_name not in config.client_keys:
             raise JWTPublicKeyNotFoundError(
-                f"Public key not found for app_id: {app_id} {unverified_decoded_token}."
+                f"Public key not found for app_id: {app_id}."
             )
 
-        with public_key_path.open("r") as key_file:
-            public_key = key_file.read()
-
-        # Decode the token using the fetched public key
+        public_key = config.client_keys[public_key_name]
         decoded_token = decode(jwt_token, public_key, algorithms=[config.algorithm])
         # Retrieve the redirect URL.
         redirect_url = decoded_token[config.redirect_url_field]
@@ -106,7 +76,6 @@ def decode_client_jwt_token(jwt_token, config: JWTConfig):
             raise JWTError("No redirect URL found in Token.")
 
         expired_time = decoded_token["exp"]
-
         # Get current time
         current_time = datetime.utcnow()
         current_timestamp = int(current_time.timestamp())
@@ -142,6 +111,7 @@ def process_email_verification_token(email_token: str, config: JWTConfig):
         email_token_redirect = (
             f"{decoded_email_token[config.redirect_url_field]}?token={email_token}"
         )
+        login_user(User(decoded_email_token["sub"]))  # TODO: decouple from flask
         return redirect(email_token_redirect, code=302)
     except JWTError as error:
         logging.error(f"Failed to verify and decode email token: {error}")
@@ -153,10 +123,10 @@ def decode_email_verification_token(jwt_token: str, config: JWTConfig):
         raise JWTError("No JWT token provided in query parameters.")
     if jwt_token in config.token_blacklist:
         raise BlacklistedTokenError("This token has been blacklisted.")
-    with config.server_public_key.open("r") as key_file:
-        public_key = key_file.read()
     try:
-        decoded_token = decode(jwt_token, public_key, algorithms=[config.algorithm])
+        decoded_token = decode(
+            jwt_token, config.server_public_key, algorithms=[config.algorithm]
+        )
         if config.redirect_url_field not in decoded_token:
             raise JWTError("No redirect URL found in token.")
         expired_time = decoded_token["exp"]
@@ -168,7 +138,7 @@ def decode_email_verification_token(jwt_token: str, config: JWTConfig):
         raise InvalidTokenError(str(error)) from error
 
 
-def generate_email_verification_token(email: str, redirect_url: str, config: JWTConfig):
+def generate_client_redirect_url(email: str, redirect_url: str, config: JWTConfig):
     expiration_time = datetime.utcnow() + timedelta(seconds=config.jwt_expire_seconds)
     expiration_timestamp = int(expiration_time.timestamp())
     payload = {
@@ -176,18 +146,31 @@ def generate_email_verification_token(email: str, redirect_url: str, config: JWT
         "exp": expiration_timestamp,
         config.redirect_url_field: redirect_url,
     }
-    email_token = encode_email_verification_token(payload, config)
-    verification_url = url_for("authenticate", token=email_token, _external=True)
-    return verification_url
+    token = encode_token_with_server_pk(payload, config)
+    return f"{redirect_url}?token={token}"
 
 
-def encode_email_verification_token(payload: dict, config: JWTConfig):
-    if not config.server_private_key.exists():
+def generate_email_verification_token_url(
+    email: str, redirect_url: str, config: JWTConfig
+):
+    expiration_time = datetime.utcnow() + timedelta(seconds=config.jwt_expire_seconds)
+    expiration_timestamp = int(expiration_time.timestamp())
+    payload = {
+        "sub": email,
+        "exp": expiration_timestamp,
+        config.redirect_url_field: redirect_url,
+    }
+    token = encode_token_with_server_pk(payload, config)
+    return url_for("main.verify_email", token=token, _external=True)
+
+
+def encode_token_with_server_pk(payload: dict, config: JWTConfig):
+    if not config.server_private_key:
         raise JWTPrivateKeyNotFoundError("Private key not found")
-    with config.server_private_key.open("r") as key_file:
-        private_key = key_file.read()
     try:
-        jwt_token = encode(payload, private_key, algorithm=config.algorithm)
+        jwt_token = encode(
+            payload, config.server_private_key, algorithm=config.algorithm
+        )
         return jwt_token
     except Exception as error:
         raise JWTError(f"Failed to encode JWT token. Error: {error}") from error
