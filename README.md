@@ -1,6 +1,12 @@
+
+## Work Flow
+
+Louis Login Backend offers a comprehensive workflow that ensures a seamless Single Sign-On (SSO) experience. The system operates through a series of steps starting from the client application check to email verification and eventual redirection after verification. 
+
+For a detailed step-by-step breakdown and to understand how the API endpoints function within this process, please refer to the [WORKFLOW documentation](./WORKFLOW.md).
+
 ## Setting Up a Quart Application
 >**Note:** If you're using a `devcontainer`, the steps involving virtual environments are not necessary. However, for developers not using `devcontainer`, the virtual environment setup remains relevant.
-
 
 Follow the instructions below to set up a Quart application in your environment:
 
