@@ -61,5 +61,10 @@ This endpoint performs multifaceted duties:
 
 ## Workflow Sequence Diagram:
 
-![Workflow Diagram](./diagrams/Louis%20Login%20Backend%20Sequence%20Diagram.png)
+#### Workflow Sequence UML Document: [Workflow Sequence UML](https://gist.github.com/CFIALeronB/f3e51c1bf166b12bd44155700e4c03b4)
+#### Sequence Diagram Website: [Sequence Diagram Website](https://sequencediagram.org/) 
+![Membrane Sequence Diagram](https://github.com/ai-cfia/membrane-backend/assets/133677161/ebd722c4-b5a9-42a9-8bf9-569e34b5f47a)
+
+
+
 
