@@ -100,7 +100,7 @@ Now, define each of the following variables:
 
 - **Description:** Connection string for the Azure communication service.
 - **Example:** `MEMBRANE_COMM_CONNECTION_STRING=your_azure_communication_service_connection_string`
-- **Reference:** https://learn.microsoft.com/en-us/python/api/azure-communication-email/azure.communication.email.emailclient?view=azure-python#azure-communication-email-emailclient-from-connection-string
+- **Reference:** <https://learn.microsoft.com/en-us/python/api/azure-communication-email/azure.communication.email.emailclient?view=azure-python#azure-communication-email-emailclient-from-connection-string>
 
 
 #### MEMBRANE_SENDER_EMAIL
@@ -344,7 +344,7 @@ You can now interact with both the main Quart application and the client simulat
    # MEMBRANE_WORKERS=
    # MEMBRANE_KEEP_ALIVE=
    ```
-
+   
 ### 3. Running the App with Docker
 
 1. Build the Docker image:
