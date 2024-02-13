@@ -37,3 +37,5 @@ keys/
 
 # Ignore Flask Sessions
 flask_session/
+
+.DS_Store
